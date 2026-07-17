@@ -1,0 +1,33 @@
+{
+  "name": "vgk-invoice-manager",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 4000",
+    "build": "next build",
+    "start": "next start -p 4000",
+    "lint": "eslint",
+    "seed:admin": "tsx --env-file=.env.local scripts/seedAdmin.ts"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jose": "^6.2.3",
+    "jsonwebtoken": "^9.0.2",
+    "jspdf": "^2.5.2",
+    "mongoose": "^8.9.0",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "^15.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5"
+  }
+}

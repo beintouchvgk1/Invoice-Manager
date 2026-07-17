@@ -1,0 +1,157 @@
+"use client";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Header } from "@/components/Layout/Header";
+import { Loader } from "@/components/Common/Loader";
+import { StatusBadge } from "@/components/Common/Badge";
+import { useCustomers } from "@/hooks/useCustomers";
+import { useInvoices } from "@/hooks/useInvoices";
+import { usePayments } from "@/hooks/usePayments";
+import { fI, fD, ageD, ost } from "@/lib/calc";
+import { PaymentModal } from "@/components/Payment/PaymentModal";
+
+export default function DashboardPage() {
+  const router = useRouter();
+  const { customers } = useCustomers();
+  const { invoices, loading, refresh: refreshInvoices } = useInvoices();
+  const { payments, refresh: refreshPayments } = usePayments();
+  const [payFor, setPayFor] = useState<string | null>(null);
+
+  const clientName = useMemo(() => {
+    const map = new Map(customers.map((c) => [c._id, c.name]));
+    return (clientId: string) => map.get(clientId) || "Unknown";
+  }, [customers]);
+
+  const totalBilled = invoices.reduce((s, i) => s + parseFloat(String(i.total || 0)), 0);
+  const totalCollected = payments.reduce((s, p) => s + parseFloat(String(p.amount || 0)), 0);
+  const totalOutstanding = invoices.reduce((s, i) => s + ost(i), 0);
+  const overdueInvoices = invoices.filter((i) => ost(i) > 0 && ageD(i.date) > 30);
+  const overdueAmount = overdueInvoices.reduce((s, i) => s + ost(i), 0);
+
+  const byClient = new Map<string, { amount: number; maxAge: number; count: number }>();
+  overdueInvoices.forEach((i) => {
+    const entry = byClient.get(i.clientId) || { amount: 0, maxAge: 0, count: 0 };
+    entry.amount += ost(i);
+    entry.count++;
+    const age = ageD(i.date);
+    if (age > entry.maxAge) entry.maxAge = age;
+    byClient.set(i.clientId, entry);
+  });
+  const overdueClients = Array.from(byClient.entries()).sort((a, b) => b[1].amount - a[1].amount);
+
+  const recent = invoices.slice().reverse().slice(0, 8);
+
+  return (
+    <>
+      <Header title="Dashboard" />
+      <div id="ct">
+        {loading ? (
+          <Loader />
+        ) : (
+          <>
+            <div className="sg">
+              <div className="sc">
+                <div className="lb">Total Billed</div>
+                <div className="vl">Rs. {fI(totalBilled)}</div>
+              </div>
+              <div className="sc" style={{ borderLeftColor: "#1a8a3a" }}>
+                <div className="lb">Income Collected</div>
+                <div className="vl" style={{ color: "#1a8a3a" }}>Rs. {fI(totalCollected)}</div>
+              </div>
+              <div className="sc" style={{ borderLeftColor: "#b86d00" }}>
+                <div className="lb">Outstanding</div>
+                <div className="vl" style={{ color: "#b86d00" }}>Rs. {fI(totalOutstanding)}</div>
+              </div>
+              <div className="sc" style={{ borderLeftColor: "#c0392b" }}>
+                <div className="lb">Overdue (30+ days)</div>
+                <div className="vl" style={{ color: "#c0392b" }}>Rs. {fI(overdueAmount)}</div>
+              </div>
+            </div>
+
+            {overdueClients.length > 0 && (
+              <div className="fc" style={{ borderLeft: "4px solid #c0392b" }}>
+                <h3 style={{ color: "#c0392b", borderBottomColor: "#f5b7b7" }}>
+                  ⚠ Overdue Clients — Follow Up Required
+                </h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Client</th>
+                      <th>Overdue Invoices</th>
+                      <th>Oldest (days)</th>
+                      <th style={{ textAlign: "right" }}>Amount Due</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {overdueClients.map(([clientId, d]) => (
+                      <tr key={clientId} style={{ background: "#fff5f5" }}>
+                        <td><strong>{clientName(clientId)}</strong></td>
+                        <td>{d.count}</td>
+                        <td><span className="bd bun">{d.maxAge} days</span></td>
+                        <td style={{ textAlign: "right", fontWeight: 700, color: "#c0392b" }}>Rs. {fI(d.amount)}</td>
+                        <td>
+                          <button
+                            className="btn sm"
+                            style={{ background: "#e8f9ed", color: "#1a8a3a", fontWeight: 700 }}
+                            onClick={() => setPayFor(clientId)}
+                          >
+                            Add Payment
+                          </button>{" "}
+                          <button className="btn sm bg" onClick={() => router.push(`/ledger/${clientId}`)}>
+                            Ledger
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <div className="tw">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Invoice No</th>
+                    <th>Date</th>
+                    <th>Client</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recent.length ? (
+                    recent.map((i) => (
+                      <tr key={i._id}>
+                        <td>{i.invoiceNumber}</td>
+                        <td>{fD(i.date)}</td>
+                        <td>{clientName(i.clientId)}</td>
+                        <td>Rs. {fI(i.total)}</td>
+                        <td><StatusBadge status={i.status} /></td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr><td colSpan={5} className="em">No invoices yet</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
+
+      {payFor && (
+        <PaymentModal
+          presetClientId={payFor}
+          onClose={() => setPayFor(null)}
+          onSaved={() => {
+            setPayFor(null);
+            refreshInvoices();
+            refreshPayments();
+          }}
+        />
+      )}
+    </>
+  );
+}
