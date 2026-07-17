@@ -21,9 +21,19 @@ global._mongooseCache = cache;
 
 export async function connectDB(): Promise<typeof mongoose> {
   if (!cache.promise) {
-    cache.promise = mongoose.connect(MONGODB_URI as string, {
-      bufferCommands: false,
-    });
+    cache.promise = mongoose
+      .connect(MONGODB_URI as string, {
+        bufferCommands: false,
+      })
+      .then((m) => {
+        console.log("MongoDB connected:", m.connection.host);
+        return m;
+      })
+      .catch((err) => {
+        cache.promise = null;
+        console.error("MongoDB connection error:", err);
+        throw err;
+      });
   }
   cache.conn = await cache.promise;
 
