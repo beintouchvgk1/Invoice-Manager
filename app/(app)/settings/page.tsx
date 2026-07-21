@@ -135,7 +135,7 @@ export default function SettingsPage() {
               <h3>Signature</h3>
               <div className="sig-upload">
                 <div>
-                  <label style={{ fontSize: 11, color: "#555", fontWeight: 600, display: "block", marginBottom: 4 }}>
+                  <label style={{ fontSize: 11, color: "#475569", fontWeight: 600, display: "block", marginBottom: 4 }}>
                     Upload / Change Signature (PNG/JPG)
                   </label>
                   <input type="file" accept="image/png,image/jpeg" onChange={handleSignatureChange} />
@@ -144,7 +144,7 @@ export default function SettingsPage() {
                 <img id="sig-prev" alt="Signature" src={signature || undefined} style={{ display: signature ? "block" : "none" }} />
                 <button className="btn brd sm" type="button" onClick={removeSignature}>Remove Signature</button>
               </div>
-              <div style={{ fontSize: 11, color: "#888", marginTop: 6 }}>Appears on invoice and receipt PDF above Authorised Signatory</div>
+              <div style={{ fontSize: 11, color: "#64748b", marginTop: 6 }}>Appears on invoice and receipt PDF above Authorised Signatory</div>
             </div>
 
             <div className="fc">
@@ -154,18 +154,18 @@ export default function SettingsPage() {
                   categories.map((c, i) => (
                     <div className="cat-item" key={`${c}-${i}`}>
                       {c}
-                      <button onClick={() => deleteCategory(i)} style={{ float: "right", background: "none", border: "none", color: "#c00", cursor: "pointer", fontSize: 14 }}>×</button>
+                      <button onClick={() => deleteCategory(i)} style={{ float: "right", background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: 14 }}>×</button>
                     </div>
                   ))
                 ) : (
-                  <div style={{ color: "#aaa", fontSize: 12 }}>No categories</div>
+                  <div style={{ color: "#94a3b8", fontSize: 12 }}>No categories</div>
                 )}
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <input
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
-                  style={{ flex: 1, padding: "7px 9px", border: "1px solid #ccd", borderRadius: 4, fontSize: 12, outline: "none" }}
+                  style={{ flex: 1, padding: "7px 9px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, outline: "none" }}
                   placeholder="Add new category"
                 />
                 <button className="btn bp sm" onClick={addCategory}>Add</button>

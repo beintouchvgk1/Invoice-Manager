@@ -79,10 +79,10 @@ function PaymentsPageInner() {
                         <td>{p.receiptNumber}</td>
                         <td>{clientName(paymentClientId(p))}</td>
                         <td>{inv ? inv.invoiceNumber : <span className="bd bok">Advance</span>}</td>
-                        <td style={{ textAlign: "right", fontWeight: 700, color: "#1a8a3a" }}>Rs. {fI(p.amount)}</td>
+                        <td style={{ textAlign: "right", fontWeight: 700, color: "#059669" }}>Rs. {fI(p.amount)}</td>
                         <td>
                           <span className={`bd ${p.mode === "Cash" ? "bok" : "bpd"}`}>{p.mode || "Cash"}</span>
-                          {p.reference && <><br /><span style={{ fontSize: 10.5, color: "#888" }}>{p.reference}</span></>}
+                          {p.reference && <><br /><span style={{ fontSize: 10.5, color: "#64748b" }}>{p.reference}</span></>}
                         </td>
                         <td>
                           <div className="ac">

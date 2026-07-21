@@ -85,14 +85,14 @@ function OutstandingReport({
         {rows.map((i) => {
           const age = ageD(i.date);
           return (
-            <tr key={i._id} style={age > 30 ? { background: "#fff5f5" } : undefined}>
+            <tr key={i._id} style={age > 30 ? { background: "#fef2f2" } : undefined}>
               <td>{i.invoiceNumber}</td>
               <td>{fD(i.date)}</td>
               <td>{age > 30 ? <span className="bd bun">{age}d</span> : `${age}d`}</td>
               <td>{clientName(i.clientId)}</td>
               <td style={{ textAlign: "right" }}>Rs. {fI(i.total)}</td>
               <td style={{ textAlign: "right" }}>Rs. {fI(i.paidAmount || 0)}</td>
-              <td style={{ textAlign: "right", fontWeight: 700, color: "#c0392b" }}>Rs. {fI(ost(i))}</td>
+              <td style={{ textAlign: "right", fontWeight: 700, color: "#dc2626" }}>Rs. {fI(ost(i))}</td>
             </tr>
           );
         })}
@@ -100,7 +100,7 @@ function OutstandingReport({
       <tfoot>
         <tr>
           <td colSpan={6} style={{ textAlign: "right", fontWeight: 700, padding: "8px 11px" }}>TOTAL OUTSTANDING</td>
-          <td style={{ fontWeight: 700, textAlign: "right", padding: "8px 11px", color: "#c0392b" }}>Rs. {fI(total)}</td>
+          <td style={{ fontWeight: 700, textAlign: "right", padding: "8px 11px", color: "#dc2626" }}>Rs. {fI(total)}</td>
         </tr>
       </tfoot>
     </table>
@@ -151,7 +151,7 @@ function ReceivedReport({
       <tfoot>
         <tr>
           <td colSpan={4} style={{ textAlign: "right", fontWeight: 700, padding: "8px 11px" }}>TOTAL INCOME RECEIVED</td>
-          <td style={{ fontWeight: 700, textAlign: "right", padding: "8px 11px", color: "#1a8a3a" }}>Rs. {fI(total)}</td>
+          <td style={{ fontWeight: 700, textAlign: "right", padding: "8px 11px", color: "#059669" }}>Rs. {fI(total)}</td>
           <td colSpan={2}></td>
         </tr>
       </tfoot>
@@ -190,20 +190,20 @@ function AgeingReport({ invoices, clientName }: { invoices: ReturnType<typeof us
   return (
     <>
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 14, padding: 16 }}>
-        <div className="ldc" style={{ borderColor: "#1a8a3a", flex: 1 }}>
+        <div className="ldc" style={{ borderColor: "#059669", flex: 1 }}>
           <div className="ld-lb">0 – 30 Days</div>
-          <div className="ld-vl" style={{ color: "#1a8a3a" }}>Rs. {fI(t1)}</div>
-          <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{b1.length} invoice(s)</div>
+          <div className="ld-vl" style={{ color: "#059669" }}>Rs. {fI(t1)}</div>
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{b1.length} invoice(s)</div>
         </div>
-        <div className="ldc" style={{ borderColor: "#b86d00", flex: 1 }}>
+        <div className="ldc" style={{ borderColor: "#d97706", flex: 1 }}>
           <div className="ld-lb">31 – 60 Days</div>
-          <div className="ld-vl" style={{ color: "#b86d00" }}>Rs. {fI(t2)}</div>
-          <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{b2.length} invoice(s)</div>
+          <div className="ld-vl" style={{ color: "#d97706" }}>Rs. {fI(t2)}</div>
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{b2.length} invoice(s)</div>
         </div>
-        <div className="ldc" style={{ borderColor: "#c0392b", flex: 1 }}>
+        <div className="ldc" style={{ borderColor: "#dc2626", flex: 1 }}>
           <div className="ld-lb">60+ Days</div>
-          <div className="ld-vl" style={{ color: "#c0392b" }}>Rs. {fI(t3)}</div>
-          <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>{b3.length} invoice(s)</div>
+          <div className="ld-vl" style={{ color: "#dc2626" }}>Rs. {fI(t3)}</div>
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>{b3.length} invoice(s)</div>
         </div>
       </div>
       <table>
@@ -213,9 +213,9 @@ function AgeingReport({ invoices, clientName }: { invoices: ReturnType<typeof us
         <tbody>
           {pending.length ? (
             <>
-              {bucket(b1, "0 – 30 DAYS", "#1a8a3a")}
-              {bucket(b2, "31 – 60 DAYS", "#b86d00")}
-              {bucket(b3, "60+ DAYS — URGENT", "#c0392b")}
+              {bucket(b1, "0 – 30 DAYS", "#059669")}
+              {bucket(b2, "31 – 60 DAYS", "#d97706")}
+              {bucket(b3, "60+ DAYS — URGENT", "#dc2626")}
             </>
           ) : (
             <tr><td colSpan={6} className="em">No pending invoices. All clear!</td></tr>
@@ -224,7 +224,7 @@ function AgeingReport({ invoices, clientName }: { invoices: ReturnType<typeof us
         <tfoot>
           <tr>
             <td colSpan={5} style={{ textAlign: "right", fontWeight: 700, padding: "8px 11px" }}>TOTAL PENDING</td>
-            <td style={{ textAlign: "right", fontWeight: 700, padding: "8px 11px", color: "#c0392b" }}>Rs. {fI(t1 + t2 + t3)}</td>
+            <td style={{ textAlign: "right", fontWeight: 700, padding: "8px 11px", color: "#dc2626" }}>Rs. {fI(t1 + t2 + t3)}</td>
           </tr>
         </tfoot>
       </table>
@@ -283,12 +283,12 @@ function GroupReport({
     grand += groupOutstanding;
     body.push(
       <tr key={`h-${g}`}>
-        <td colSpan={2} style={{ background: "#eef2fa", fontWeight: 700, color: "#1B3A6B", padding: "7px 11px" }}>
+        <td colSpan={2} style={{ background: "#eff6ff", fontWeight: 700, color: "#1d4ed8", padding: "7px 11px" }}>
           {g} ({arr.length} client{arr.length > 1 ? "s" : ""})
         </td>
-        <td style={{ background: "#eef2fa", textAlign: "right", fontWeight: 700, padding: "7px 11px" }}>Rs. {fI(groupTotal)}</td>
-        <td style={{ background: "#eef2fa", textAlign: "right", fontWeight: 700, padding: "7px 11px" }}>Rs. {fI(groupPaid)}</td>
-        <td style={{ background: "#eef2fa", textAlign: "right", fontWeight: 700, color: "#c0392b", padding: "7px 11px" }}>Rs. {fI(groupOutstanding)}</td>
+        <td style={{ background: "#eff6ff", textAlign: "right", fontWeight: 700, padding: "7px 11px" }}>Rs. {fI(groupTotal)}</td>
+        <td style={{ background: "#eff6ff", textAlign: "right", fontWeight: 700, padding: "7px 11px" }}>Rs. {fI(groupPaid)}</td>
+        <td style={{ background: "#eff6ff", textAlign: "right", fontWeight: 700, color: "#dc2626", padding: "7px 11px" }}>Rs. {fI(groupOutstanding)}</td>
       </tr>
     );
     arr.forEach((x) => {
@@ -298,7 +298,7 @@ function GroupReport({
           <td>{x.d.count} invoice(s)</td>
           <td style={{ textAlign: "right" }}>Rs. {fI(x.d.total)}</td>
           <td style={{ textAlign: "right" }}>Rs. {fI(x.d.paidAmount)}</td>
-          <td style={{ textAlign: "right", fontWeight: 700, color: "#c0392b" }}>Rs. {fI(x.d.outstanding)}</td>
+          <td style={{ textAlign: "right", fontWeight: 700, color: "#dc2626" }}>Rs. {fI(x.d.outstanding)}</td>
         </tr>
       );
     });
@@ -313,7 +313,7 @@ function GroupReport({
       <tfoot>
         <tr>
           <td colSpan={4} style={{ textAlign: "right", fontWeight: 700, padding: "8px 11px" }}>TOTAL OUTSTANDING (ALL GROUPS)</td>
-          <td style={{ textAlign: "right", fontWeight: 700, padding: "8px 11px", color: "#c0392b" }}>Rs. {fI(grand)}</td>
+          <td style={{ textAlign: "right", fontWeight: 700, padding: "8px 11px", color: "#dc2626" }}>Rs. {fI(grand)}</td>
         </tr>
       </tfoot>
     </table>

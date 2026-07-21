@@ -94,7 +94,7 @@ export function GroupModal({
                     {c.name}
                     <button
                       onClick={() => removeMember(c)}
-                      style={{ float: "right", background: "none", border: "none", color: "#c00", cursor: "pointer", fontSize: 14 }}
+                      style={{ float: "right", background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: 14 }}
                       title="Remove from group"
                     >
                       ×
@@ -102,7 +102,7 @@ export function GroupModal({
                   </div>
                 ))
               ) : (
-                <div style={{ color: "#aaa", fontSize: 12, padding: "4px 0" }}>No clients in this group yet.</div>
+                <div style={{ color: "#94a3b8", fontSize: 12, padding: "4px 0" }}>No clients in this group yet.</div>
               )}
             </div>
           </div>
@@ -110,7 +110,7 @@ export function GroupModal({
             <select
               value={addSel}
               onChange={(e) => setAddSel(e.target.value)}
-              style={{ flex: 1, padding: "7px 9px", border: "1px solid #ccd", borderRadius: 4, fontSize: 12, outline: "none" }}
+              style={{ flex: 1, padding: "7px 9px", border: "1px solid #cbd5e1", borderRadius: 4, fontSize: 12, outline: "none" }}
             >
               <option value="">- Select client to add -</option>
               {others.map((c) => (

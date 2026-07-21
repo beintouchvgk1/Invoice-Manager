@@ -57,17 +57,17 @@ export function CustomerTable({
               }
 
               return (
-                <tr key={c._id} style={isOverdue ? { background: "#fff5f5" } : undefined}>
+                <tr key={c._id} style={isOverdue ? { background: "#fef2f2" } : undefined}>
                   <td>
                     <strong>{c.name}</strong>
                     {c.groupName && (
                       <>
                         {" "}
-                        <span className="bd" style={{ background: "#eef2fa", color: "#1B3A6B" }}>{c.groupName}</span>
+                        <span className="bd" style={{ background: "#eff6ff", color: "#1d4ed8" }}>{c.groupName}</span>
                       </>
                     )}
                     <br />
-                    <span style={{ fontSize: 11, color: "#888" }}>{addr}</span>
+                    <span style={{ fontSize: 11, color: "#64748b" }}>{addr}</span>
                   </td>
                   <td>{c.mobile || "—"}</td>
                   <td>{bal}</td>
@@ -76,7 +76,7 @@ export function CustomerTable({
                       <button className="btn sm bg" onClick={() => onLedger(c)}>Ledger</button>
                       <button
                         className="btn sm"
-                        style={{ background: "#e8f9ed", color: "#1a8a3a", fontWeight: 700 }}
+                        style={{ background: "#ecfdf5", color: "#059669", fontWeight: 700 }}
                         onClick={() => onAddPayment(c)}
                       >
                         + Payment

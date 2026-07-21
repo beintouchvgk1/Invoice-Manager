@@ -34,49 +34,56 @@ export default function LoginPage() {
   }
 
   return (
-    <div
-      style={{
-        width: "100%",
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#f4f6fa",
-      }}
-    >
-      <form
-        onSubmit={handleSubmit}
-        className="fc"
-        style={{ width: 340, boxShadow: "0 2px 12px rgba(0,0,0,.12)" }}
-      >
-        <div style={{ textAlign: "center", marginBottom: 18 }}>
-          <h1 style={{ color: "#1B3A6B", fontSize: 16, fontWeight: 700 }}>VGK Invoice Manager</h1>
-          <p style={{ color: "#C8A84B", fontSize: 11, marginTop: 2 }}>V G K &amp; CO &middot; Surat</p>
+    <div className="login-shell">
+      <form onSubmit={handleSubmit} className="login-card">
+        <div style={{ textAlign: "center", marginBottom: 24 }}>
+          <div className="login-logo">VGK</div>
+          <h1 style={{ color: "#0f172a", fontSize: 18, fontWeight: 700 }}>VGK Invoice Manager</h1>
+          <p style={{ color: "#64748b", fontSize: 11.5, marginTop: 4 }}>V G K &amp; CO &middot; Surat</p>
         </div>
+
         {error && <Toast kind="err" message={error} />}
-        <div className="fg" style={{ marginBottom: 10 }}>
-          <label>Username</label>
+
+        <div className="login-field">
           <input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            placeholder="Username"
+            aria-label="Username"
             autoFocus
             autoComplete="username"
           />
+          <span className="icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </span>
         </div>
-        <div className="fg" style={{ marginBottom: 12 }}>
-          <label>Password</label>
+
+        <div className="login-field">
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            aria-label="Password"
             autoComplete="current-password"
           />
+          <span className="icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="4" y="10" width="16" height="11" rx="2" />
+              <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+            </svg>
+          </span>
         </div>
-        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#555", marginBottom: 14 }}>
+
+        <label className="login-remember">
           <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} style={{ width: "auto" }} />
           Remember me
         </label>
-        <button type="submit" className="btn bp" style={{ width: "100%" }} disabled={busy}>
+
+        <button type="submit" className="pill-btn" disabled={busy}>
           {busy ? "Signing in..." : "Sign In"}
         </button>
       </form>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMax slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#eff6ff" />
+      <stop offset="55%" stop-color="#f8fafc" />
+      <stop offset="100%" stop-color="#f8fafc" />
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#bfdbfe" stop-opacity="0.9" />
+      <stop offset="60%" stop-color="#93c5fd" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#93c5fd" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="m1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#dbeafe" />
+      <stop offset="100%" stop-color="#bfdbfe" />
+    </linearGradient>
+    <linearGradient id="m2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#bfdbfe" />
+      <stop offset="100%" stop-color="#93c5fd" />
+    </linearGradient>
+    <linearGradient id="m3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#sky)" />
+
+  <circle cx="1550" cy="260" r="150" fill="url(#glow)" />
+  <circle cx="1550" cy="260" r="46" fill="#ffffff" opacity="0.9" />
+
+  <g opacity="0.5">
+    <circle cx="180" cy="150" r="2.5" fill="#93c5fd" />
+    <circle cx="340" cy="90" r="2" fill="#93c5fd" />
+    <circle cx="520" cy="180" r="1.8" fill="#bfdbfe" />
+    <circle cx="760" cy="110" r="2.2" fill="#93c5fd" />
+    <circle cx="980" cy="70" r="2" fill="#bfdbfe" />
+    <circle cx="1180" cy="160" r="1.8" fill="#93c5fd" />
+    <circle cx="1350" cy="90" r="2.4" fill="#bfdbfe" />
+    <circle cx="120" cy="260" r="1.6" fill="#bfdbfe" />
+    <circle cx="640" cy="220" r="1.6" fill="#93c5fd" />
+  </g>
+
+  <path d="M0,780 L160,650 L300,740 L470,560 L640,720 L820,600 L1000,750 L1180,610 L1360,730 L1540,590 L1720,740 L1920,640 L1920,1080 L0,1080 Z" fill="url(#m1)" opacity="0.75" />
+  <path d="M0,860 L220,720 L420,840 L620,690 L840,830 L1060,700 L1280,850 L1500,710 L1720,840 L1920,750 L1920,1080 L0,1080 Z" fill="url(#m2)" opacity="0.85" />
+  <path d="M0,960 L260,840 L500,950 L740,830 L980,960 L1220,840 L1460,955 L1700,830 L1920,930 L1920,1080 L0,1080 Z" fill="url(#m3)" />
+</svg>

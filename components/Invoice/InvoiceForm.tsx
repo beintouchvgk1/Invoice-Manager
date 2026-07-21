@@ -105,7 +105,7 @@ export function InvoiceForm({ invoice }: { invoice?: Invoice }) {
         <div className="g2">
           <div className="fg">
             <label>Invoice No.</label>
-            <input value={invoiceNumber} readOnly style={{ background: "#f5f5f5" }} />
+            <input value={invoiceNumber} readOnly style={{ background: "#f1f5f9" }} />
           </div>
           <div className="fg">
             <label>Invoice Date *</label>

@@ -40,13 +40,13 @@ export function InvoiceTable({
             rows.map((inv) => {
               const overdue = ost(inv) > 0 && ageD(inv.date) > 30;
               return (
-                <tr key={inv._id} style={overdue ? { background: "#fff5f5" } : undefined}>
+                <tr key={inv._id} style={overdue ? { background: "#fef2f2" } : undefined}>
                   <td>{inv.invoiceNumber}{overdue && <> <span className="bd bun">{ageD(inv.date)}d</span></>}</td>
                   <td>{fD(inv.date)}</td>
                   <td>{clientName(inv.clientId)}</td>
                   <td>Rs. {fI(inv.total)}</td>
                   <td><StatusBadge status={inv.status} /></td>
-                  <td><span style={{ fontSize: 11, color: "#888" }}>{inv.paymentType === "cash" ? "Cash" : "Credit"}</span></td>
+                  <td><span style={{ fontSize: 11, color: "#64748b" }}>{inv.paymentType === "cash" ? "Cash" : "Credit"}</span></td>
                   <td>
                     <div className="ac">
                       <button className="btn sm bs" onClick={() => onPrint(inv)}>PDF</button>
@@ -54,7 +54,7 @@ export function InvoiceTable({
                       {inv.paymentType !== "cash" && inv.status !== "Paid" && (
                         <button
                           className="btn sm"
-                          style={{ background: "#e8f9ed", color: "#1a8a3a", fontWeight: 700 }}
+                          style={{ background: "#ecfdf5", color: "#059669", fontWeight: 700 }}
                           onClick={() => onAddPayment(inv)}
                         >
                           + Payment

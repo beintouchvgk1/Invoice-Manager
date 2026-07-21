@@ -54,23 +54,23 @@ export default function DashboardPage() {
                 <div className="lb">Total Billed</div>
                 <div className="vl">Rs. {fI(totalBilled)}</div>
               </div>
-              <div className="sc" style={{ borderLeftColor: "#1a8a3a" }}>
+              <div className="sc" style={{ borderLeftColor: "#059669" }}>
                 <div className="lb">Income Collected</div>
-                <div className="vl" style={{ color: "#1a8a3a" }}>Rs. {fI(totalCollected)}</div>
+                <div className="vl" style={{ color: "#059669" }}>Rs. {fI(totalCollected)}</div>
               </div>
-              <div className="sc" style={{ borderLeftColor: "#b86d00" }}>
+              <div className="sc" style={{ borderLeftColor: "#d97706" }}>
                 <div className="lb">Outstanding</div>
-                <div className="vl" style={{ color: "#b86d00" }}>Rs. {fI(totalOutstanding)}</div>
+                <div className="vl" style={{ color: "#d97706" }}>Rs. {fI(totalOutstanding)}</div>
               </div>
-              <div className="sc" style={{ borderLeftColor: "#c0392b" }}>
+              <div className="sc" style={{ borderLeftColor: "#dc2626" }}>
                 <div className="lb">Overdue (30+ days)</div>
-                <div className="vl" style={{ color: "#c0392b" }}>Rs. {fI(overdueAmount)}</div>
+                <div className="vl" style={{ color: "#dc2626" }}>Rs. {fI(overdueAmount)}</div>
               </div>
             </div>
 
             {overdueClients.length > 0 && (
-              <div className="fc" style={{ borderLeft: "4px solid #c0392b" }}>
-                <h3 style={{ color: "#c0392b", borderBottomColor: "#f5b7b7" }}>
+              <div className="fc" style={{ borderLeft: "4px solid #dc2626" }}>
+                <h3 style={{ color: "#dc2626", borderBottomColor: "#fecaca" }}>
                   ⚠ Overdue Clients — Follow Up Required
                 </h3>
                 <table>
@@ -85,15 +85,15 @@ export default function DashboardPage() {
                   </thead>
                   <tbody>
                     {overdueClients.map(([clientId, d]) => (
-                      <tr key={clientId} style={{ background: "#fff5f5" }}>
+                      <tr key={clientId} style={{ background: "#fef2f2" }}>
                         <td><strong>{clientName(clientId)}</strong></td>
                         <td>{d.count}</td>
                         <td><span className="bd bun">{d.maxAge} days</span></td>
-                        <td style={{ textAlign: "right", fontWeight: 700, color: "#c0392b" }}>Rs. {fI(d.amount)}</td>
+                        <td style={{ textAlign: "right", fontWeight: 700, color: "#dc2626" }}>Rs. {fI(d.amount)}</td>
                         <td>
                           <button
                             className="btn sm"
-                            style={{ background: "#e8f9ed", color: "#1a8a3a", fontWeight: 700 }}
+                            style={{ background: "#ecfdf5", color: "#059669", fontWeight: 700 }}
                             onClick={() => setPayFor(clientId)}
                           >
                             Add Payment

@@ -36,7 +36,7 @@ export default function GroupsPage() {
                     <tr key={g.name}>
                       <td><strong>{g.name}</strong></td>
                       <td>{g.memberCount} client(s)</td>
-                      <td style={{ textAlign: "right", fontWeight: 700, color: g.outstanding > 0 ? "#c0392b" : "#1a8a3a" }}>
+                      <td style={{ textAlign: "right", fontWeight: 700, color: g.outstanding > 0 ? "#dc2626" : "#059669" }}>
                         {g.outstanding > 0 ? `Rs. ${fI(g.outstanding)}` : "Clear"}
                       </td>
                       <td>
