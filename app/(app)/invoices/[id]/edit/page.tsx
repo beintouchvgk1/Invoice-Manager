@@ -1,7 +1,7 @@
 "use client";
 import { use, useEffect, useState } from "react";
 import { Header } from "@/components/Layout/Header";
-import { Loader } from "@/components/Common/Loader";
+import { SkeletonFormCard } from "@/components/Common/Skeleton";
 import { InvoiceForm } from "@/components/Invoice/InvoiceForm";
 import { invoiceService } from "@/services/invoice.service";
 import type { Invoice } from "@/lib/types";
@@ -19,7 +19,16 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
     <>
       <Header title="New Invoice" />
       <div id="ct">
-        {loading ? <Loader /> : invoice ? <InvoiceForm invoice={invoice} /> : <div className="em">Invoice not found</div>}
+        {loading ? (
+          <>
+            <SkeletonFormCard fields={5} />
+            <SkeletonFormCard fields={3} />
+          </>
+        ) : invoice ? (
+          <InvoiceForm invoice={invoice} />
+        ) : (
+          <div className="em">Invoice not found</div>
+        )}
       </div>
     </>
   );

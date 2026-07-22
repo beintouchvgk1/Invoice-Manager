@@ -3,6 +3,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/Layout/Header";
 import { Loader } from "@/components/Common/Loader";
+import { SkeletonTable } from "@/components/Common/Skeleton";
 import { PaymentModal } from "@/components/Payment/PaymentModal";
 import { usePayments } from "@/hooks/usePayments";
 import { useInvoices } from "@/hooks/useInvoices";
@@ -54,7 +55,7 @@ function PaymentsPageInner() {
       />
       <div id="ct">
         {loading ? (
-          <Loader />
+          <SkeletonTable columns={7} rows={7} />
         ) : (
           <div className="tw">
             <table>

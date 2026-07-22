@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/Layout/Header";
-import { Loader } from "@/components/Common/Loader";
+import { SkeletonTable } from "@/components/Common/Skeleton";
 import { InvoiceTable } from "@/components/Invoice/InvoiceTable";
 import { usePrintInvoice } from "@/components/Invoice/InvoicePreview";
 import { useInvoices } from "@/hooks/useInvoices";
@@ -34,7 +34,7 @@ export default function InvoicesPage() {
       />
       <div id="ct">
         {loading ? (
-          <Loader />
+          <SkeletonTable columns={7} rows={7} />
         ) : (
           <InvoiceTable
             invoices={invoices}

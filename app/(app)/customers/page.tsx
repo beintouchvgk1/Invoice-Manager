@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/Layout/Header";
-import { Loader } from "@/components/Common/Loader";
+import { SkeletonTable } from "@/components/Common/Skeleton";
 import { CustomerTable } from "@/components/Client/CustomerTable";
 import { CustomerModal } from "@/components/Client/CustomerModal";
 import { PaymentModal } from "@/components/Payment/PaymentModal";
@@ -34,7 +34,7 @@ export default function CustomersPage() {
       />
       <div id="ct">
         {loading ? (
-          <Loader />
+          <SkeletonTable columns={4} rows={7} />
         ) : (
           <CustomerTable
             clients={customers}

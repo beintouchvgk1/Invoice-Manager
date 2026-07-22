@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Header } from "@/components/Layout/Header";
-import { Loader } from "@/components/Common/Loader";
+import { SkeletonTable } from "@/components/Common/Skeleton";
 import { GroupModal } from "@/components/Group/GroupModal";
 import { useGroups } from "@/hooks/useGroups";
 import { fI } from "@/lib/calc";
@@ -18,7 +18,7 @@ export default function GroupsPage() {
       />
       <div id="ct">
         {loading ? (
-          <Loader />
+          <SkeletonTable columns={4} rows={6} />
         ) : (
           <div className="tw">
             <table>

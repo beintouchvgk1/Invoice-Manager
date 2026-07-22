@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/Layout/Header";
-import { Loader } from "@/components/Common/Loader";
+import { SkeletonStatGrid, SkeletonTable } from "@/components/Common/Skeleton";
 import { StatusBadge } from "@/components/Common/Badge";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useInvoices } from "@/hooks/useInvoices";
@@ -46,7 +46,12 @@ export default function DashboardPage() {
       <Header title="Dashboard" />
       <div id="ct">
         {loading ? (
-          <Loader />
+          <>
+            <SkeletonStatGrid count={4} />
+            <div style={{ marginTop: 20 }}>
+              <SkeletonTable columns={5} rows={6} />
+            </div>
+          </>
         ) : (
           <>
             <div className="sg">

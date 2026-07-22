@@ -1,7 +1,7 @@
 "use client";
 import { ChangeEvent, useEffect, useState } from "react";
 import { Header } from "@/components/Layout/Header";
-import { Loader } from "@/components/Common/Loader";
+import { SkeletonFormCard } from "@/components/Common/Skeleton";
 import { Toast } from "@/components/Common/Toast";
 import { useSettings } from "@/hooks/useSettings";
 import { settingsService } from "@/services/settings.service";
@@ -103,7 +103,11 @@ export default function SettingsPage() {
       <Header title="Settings" />
       <div id="ct">
         {loading ? (
-          <Loader />
+          <>
+            <SkeletonFormCard fields={6} />
+            <SkeletonFormCard fields={6} />
+            <SkeletonFormCard fields={2} />
+          </>
         ) : (
           <>
             <div className="fc">

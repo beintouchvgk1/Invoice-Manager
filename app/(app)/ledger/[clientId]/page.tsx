@@ -2,7 +2,7 @@
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/Layout/Header";
-import { Loader } from "@/components/Common/Loader";
+import { SkeletonBlock, SkeletonTable } from "@/components/Common/Skeleton";
 import { PaymentModal } from "@/components/Payment/PaymentModal";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useInvoices } from "@/hooks/useInvoices";
@@ -88,7 +88,17 @@ export default function LedgerPage({ params }: { params: Promise<{ clientId: str
       />
       <div id="ct">
         {loading ? (
-          <Loader />
+          <>
+            <div className="fc">
+              <SkeletonBlock width={180} height={17} style={{ marginBottom: 14 }} />
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                <SkeletonBlock width={170} height={64} />
+                <SkeletonBlock width={170} height={64} />
+                <SkeletonBlock width={170} height={64} />
+              </div>
+            </div>
+            <SkeletonTable columns={5} rows={6} />
+          </>
         ) : !client ? (
           <div className="em">Client not found</div>
         ) : (

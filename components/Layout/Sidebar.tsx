@@ -1,7 +1,9 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
+import { useSidebarContext } from "@/components/Layout/SidebarContext";
 
 function Icon({ path }: { path: string }) {
   return (
@@ -21,6 +23,9 @@ const ICONS = {
   settings:
     "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm8-3a8 8 0 0 0-.15-1.55l2-1.55-2-3.46-2.36.95a7.97 7.97 0 0 0-2.68-1.55L16.4 2h-4l-.4 2.84a7.97 7.97 0 0 0-2.69 1.55L6.95 5.44l-2 3.46 2 1.55a8.14 8.14 0 0 0 0 3.1l-2 1.55 2 3.46 2.36-.95c.79.68 1.7 1.2 2.69 1.55L12.4 22h4l.4-2.84c.98-.35 1.9-.87 2.68-1.55l2.36.95 2-3.46-2-1.55c.1-.51.16-1.03.16-1.55Z",
   logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
+  collapseLeft: "M11 19l-7-7 7-7M19 19l-7-7 7-7",
+  collapseRight: "M13 5l7 7-7 7M5 5l7 7-7 7",
+  close: "M18 6 6 18M6 6l12 12",
 };
 
 const NAV = [
@@ -33,9 +38,36 @@ const NAV = [
   { id: "st", href: "/settings", icon: ICONS.settings, label: "Settings" },
 ];
 
+const COLLAPSE_KEY = "vgk_sidebar_collapsed";
+const MOBILE_QUERY = "(max-width: 1024px)";
+
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [collapsed, setCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const { mobileOpen, closeMobile } = useSidebarContext();
+
+  useEffect(() => {
+    setCollapsed(localStorage.getItem(COLLAPSE_KEY) === "1");
+    const mq = window.matchMedia(MOBILE_QUERY);
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) closeMobile();
+  }, [isMobile, closeMobile]);
+
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+      return next;
+    });
+  }
 
   async function handleLogout() {
     await authService.logout().catch(() => {});
@@ -43,33 +75,58 @@ export function Sidebar() {
     router.refresh();
   }
 
+  // On mobile the drawer always shows full labels; the rail-collapse preference only applies on desktop.
+  const railCollapsed = !isMobile && collapsed;
+
   return (
-    <div id="sb">
-      <div className="br1">
-        <div className="logo-badge">VGK</div>
-        <div>
-          <h1>Invoice Manager</h1>
-          <p>V G K &amp; CO &middot; Surat</p>
+    <>
+      <div
+        className={`sidebar-backdrop${isMobile && mobileOpen ? " show" : ""}`}
+        onClick={closeMobile}
+        aria-hidden="true"
+      />
+      <div id="sb" className={[railCollapsed ? "collapsed" : "", isMobile && mobileOpen ? "mobile-open" : ""].filter(Boolean).join(" ")}>
+        <div className="br1">
+          <div className="logo-badge">VGK</div>
+          {!railCollapsed && (
+            <div>
+              <h1>Invoice Manager</h1>
+              <p>V G K &amp; CO &middot; Surat</p>
+            </div>
+          )}
+          {isMobile && (
+            <button type="button" className="sidebar-close" onClick={closeMobile} aria-label="Close menu">
+              <Icon path={ICONS.close} />
+            </button>
+          )}
         </div>
+        <nav>
+          {NAV.map((item) => (
+            <Link
+              key={item.id}
+              id={`n-${item.id}`}
+              href={item.href}
+              className={pathname.startsWith(item.href) ? "active" : ""}
+              title={railCollapsed ? item.label : undefined}
+              onClick={closeMobile}
+            >
+              <Icon path={item.icon} />
+              {!railCollapsed && item.label}
+            </Link>
+          ))}
+          <a className="logout" onClick={handleLogout} title={railCollapsed ? "Logout" : undefined}>
+            <Icon path={ICONS.logout} />
+            {!railCollapsed && "Logout"}
+          </a>
+        </nav>
+        {!isMobile && (
+          <button type="button" className="collapse-toggle" onClick={toggleCollapsed} title={collapsed ? "Expand" : undefined}>
+            <Icon path={collapsed ? ICONS.collapseRight : ICONS.collapseLeft} />
+            {!collapsed && "Collapse"}
+          </button>
+        )}
+        {!railCollapsed && <div className="ver">V G K &amp; CO</div>}
       </div>
-      <nav>
-        {NAV.map((item) => (
-          <Link
-            key={item.id}
-            id={`n-${item.id}`}
-            href={item.href}
-            className={pathname.startsWith(item.href) ? "active" : ""}
-          >
-            <Icon path={item.icon} />
-            {item.label}
-          </Link>
-        ))}
-        <a className="logout" onClick={handleLogout}>
-          <Icon path={ICONS.logout} />
-          Logout
-        </a>
-      </nav>
-      <div className="ver">V G K &amp; CO</div>
-    </div>
+    </>
   );
 }

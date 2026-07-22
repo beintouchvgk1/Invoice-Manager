@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { Header } from "@/components/Layout/Header";
-import { Loader } from "@/components/Common/Loader";
+import { SkeletonBlock, SkeletonTable } from "@/components/Common/Skeleton";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useInvoices } from "@/hooks/useInvoices";
 import { usePayments } from "@/hooks/usePayments";
@@ -29,7 +29,15 @@ export default function ReportsPage() {
       <Header title="Reports" />
       <div id="ct">
         {loading ? (
-          <Loader />
+          <>
+            <div className="rp-filter">
+              <SkeletonBlock width={150} height={32} />
+              <SkeletonBlock width={170} height={32} />
+              <SkeletonBlock width={130} height={32} />
+              <SkeletonBlock width={190} height={32} />
+            </div>
+            <SkeletonTable columns={6} rows={6} />
+          </>
         ) : (
           <>
             <div className="rp-filter">
