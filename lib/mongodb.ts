@@ -1,10 +1,5 @@
 import mongoose from "mongoose";
-
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-  throw new Error("Missing MONGODB_URI environment variable");
-}
+import { env } from "@/lib/env";
 
 type MongooseCache = {
   conn: typeof mongoose | null;
@@ -22,7 +17,7 @@ global._mongooseCache = cache;
 export async function connectDB(): Promise<typeof mongoose> {
   if (!cache.promise) {
     cache.promise = mongoose
-      .connect(MONGODB_URI as string, {
+      .connect(env.mongodbUri, {
         bufferCommands: false,
       })
       .then((m) => {

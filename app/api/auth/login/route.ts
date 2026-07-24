@@ -5,6 +5,7 @@ import { comparePassword } from "@/lib/bcrypt";
 import { signToken, AUTH_COOKIE } from "@/lib/jwt";
 import { ok, fail } from "@/lib/response";
 import { isNonEmptyString } from "@/lib/validators";
+import { env } from "@/lib/env";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
   res.cookies.set(AUTH_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: env.isProduction,
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
   });
