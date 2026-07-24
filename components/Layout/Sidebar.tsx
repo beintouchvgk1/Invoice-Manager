@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { useSidebarContext } from "@/components/Layout/SidebarContext";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { ROLES } from "@/lib/constants";
 
 function Icon({ path }: { path: string }) {
   return (
@@ -11,6 +13,15 @@ function Icon({ path }: { path: string }) {
       <path d={path} />
     </svg>
   );
+}
+
+function initialsFromEmail(email: string): string {
+  const local = email.split("@")[0].replace(/[^a-zA-Z]/g, "");
+  return (local.slice(0, 2) || "?").toUpperCase();
+}
+
+function humanizeRole(role: string): string {
+  return role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 const ICONS = {
@@ -22,6 +33,8 @@ const ICONS = {
   reports: "M4 19h16M6 19V9m6 10V5m6 14v-7",
   settings:
     "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm8-3a8 8 0 0 0-.15-1.55l2-1.55-2-3.46-2.36.95a7.97 7.97 0 0 0-2.68-1.55L16.4 2h-4l-.4 2.84a7.97 7.97 0 0 0-2.69 1.55L6.95 5.44l-2 3.46 2 1.55a8.14 8.14 0 0 0 0 3.1l-2 1.55 2 3.46 2.36-.95c.79.68 1.7 1.2 2.69 1.55L12.4 22h4l.4-2.84c.98-.35 1.9-.87 2.68-1.55l2.36.95 2-3.46-2-1.55c.1-.51.16-1.03.16-1.55Z",
+  roles: "M12 2 3 6v6c0 5 3.5 8.5 9 10 5.5-1.5 9-5 9-10V6l-9-4Zm0 4a3 3 0 1 1 0 6 3 3 0 0 1 0-6Zm0 8c2.2 0 6.5 1.1 6.5 3.3V19H5.5v-1.7C5.5 15.1 9.8 14 12 14Z",
+  users: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
   logout: "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9",
   collapseLeft: "M11 19l-7-7 7-7M19 19l-7-7 7-7",
   collapseRight: "M13 5l7 7-7 7M5 5l7 7-7 7",
@@ -38,6 +51,11 @@ const NAV = [
   { id: "st", href: "/settings", icon: ICONS.settings, label: "Settings" },
 ];
 
+const SUPER_ADMIN_NAV = [
+  { id: "rl", href: "/roles", icon: ICONS.roles, label: "Roles" },
+  { id: "us", href: "/users", icon: ICONS.users, label: "Users" },
+];
+
 const COLLAPSE_KEY = "vgk_sidebar_collapsed";
 const MOBILE_QUERY = "(max-width: 1024px)";
 
@@ -47,6 +65,8 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const { mobileOpen, closeMobile } = useSidebarContext();
+  const { email, role } = useCurrentUser();
+  const nav = role === ROLES.SUPER_ADMIN ? [...NAV, ...SUPER_ADMIN_NAV] : NAV;
 
   useEffect(() => {
     setCollapsed(localStorage.getItem(COLLAPSE_KEY) === "1");
@@ -101,7 +121,7 @@ export function Sidebar() {
           )}
         </div>
         <nav>
-          {NAV.map((item) => (
+          {nav.map((item) => (
             <Link
               key={item.id}
               id={`n-${item.id}`}
@@ -114,18 +134,29 @@ export function Sidebar() {
               {!railCollapsed && item.label}
             </Link>
           ))}
-          <a className="logout" onClick={handleLogout} title={railCollapsed ? "Logout" : undefined}>
-            <Icon path={ICONS.logout} />
-            {!railCollapsed && "Logout"}
-          </a>
         </nav>
-        {!isMobile && (
-          <button type="button" className="collapse-toggle" onClick={toggleCollapsed} title={collapsed ? "Expand" : undefined}>
-            <Icon path={collapsed ? ICONS.collapseRight : ICONS.collapseLeft} />
-            {!collapsed && "Collapse"}
-          </button>
-        )}
-        {!railCollapsed && <div className="ver">V G K &amp; CO</div>}
+        <div className="sidebar-footer">
+          {!isMobile && (
+            <button type="button" className="collapse-toggle" onClick={toggleCollapsed} title={collapsed ? "Expand" : undefined}>
+              <Icon path={collapsed ? ICONS.collapseRight : ICONS.collapseLeft} />
+              {!collapsed && "Collapse"}
+            </button>
+          )}
+          {email && (
+            <div className="sidebar-user">
+              <div className="sidebar-user-avatar">{initialsFromEmail(email)}</div>
+              {!railCollapsed && (
+                <div className="sidebar-user-info">
+                  <div className="sidebar-user-email" title={email}>{email}</div>
+                  <div className="sidebar-user-role">{role ? humanizeRole(role) : ""}</div>
+                </div>
+              )}
+              <button type="button" className="sidebar-user-logout" onClick={handleLogout} title="Logout" aria-label="Logout">
+                <Icon path={ICONS.logout} />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );

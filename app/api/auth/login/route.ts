@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
-import Admin from "@/models/Admin";
+import User from "@/models/User";
+import "@/models/Role";
 import { comparePassword } from "@/lib/bcrypt";
 import { signToken, AUTH_COOKIE } from "@/lib/jwt";
 import { ok, fail } from "@/lib/response";
@@ -9,19 +10,24 @@ import { env } from "@/lib/env";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
-  if (!body || !isNonEmptyString(body.username) || !isNonEmptyString(body.password)) {
-    return fail("Username and password are required", 400);
+  if (!body || !isNonEmptyString(body.email) || !isNonEmptyString(body.password)) {
+    return fail("Email and password are required", 400);
   }
 
   await connectDB();
-  const admin = await Admin.findOne({ username: body.username.trim() });
-  if (!admin) return fail("Invalid username or password", 401);
+  const user = await User.findOne({ email: body.email.trim().toLowerCase() }).populate<{
+    roleId: { name: string; isActive: boolean };
+  }>("roleId");
+  if (!user || !user.isActive) return fail("Invalid email or password", 401);
 
-  const valid = await comparePassword(body.password, admin.password);
-  if (!valid) return fail("Invalid username or password", 401);
+  const role = user.roleId as unknown as { name: string; isActive: boolean } | null;
+  if (!role || !role.isActive) return fail("Invalid email or password", 401);
 
-  const token = signToken({ sub: admin._id.toString(), username: admin.username });
-  const res = ok({ username: admin.username });
+  const valid = await comparePassword(body.password, user.password);
+  if (!valid) return fail("Invalid email or password", 401);
+
+  const token = signToken({ sub: user._id.toString(), email: user.email, role: role.name });
+  const res = ok({ email: user.email, role: role.name });
   res.cookies.set(AUTH_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",

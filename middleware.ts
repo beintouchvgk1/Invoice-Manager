@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
+import { env } from "@/lib/env";
+import { AUTH_COOKIE } from "@/lib/constants";
 
-const AUTH_COOKIE = "vgk_token";
-const PROTECTED_PREFIXES = ["/dashboard", "/invoices", "/customers", "/groups", "/payments", "/ledger", "/reports", "/settings"];
+const PROTECTED_PREFIXES = ["/dashboard", "/invoices", "/customers", "/groups", "/payments", "/ledger", "/reports", "/settings", "/roles", "/users"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -13,7 +14,7 @@ export async function middleware(req: NextRequest) {
   if (!token) return NextResponse.redirect(new URL("/login", req.url));
 
   try {
-    await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET));
+    await jwtVerify(token, new TextEncoder().encode(env.jwtSecret));
     return NextResponse.next();
   } catch {
     const res = NextResponse.redirect(new URL("/login", req.url));
@@ -23,5 +24,16 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/invoices/:path*", "/customers/:path*", "/groups/:path*", "/payments/:path*", "/ledger/:path*", "/reports/:path*", "/settings/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/invoices/:path*",
+    "/customers/:path*",
+    "/groups/:path*",
+    "/payments/:path*",
+    "/ledger/:path*",
+    "/reports/:path*",
+    "/settings/:path*",
+    "/roles/:path*",
+    "/users/:path*",
+  ],
 };

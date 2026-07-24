@@ -5,10 +5,11 @@ import Client from "@/models/Client";
 import { requireAuth } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isNonEmptyString } from "@/lib/validators";
+import type { RouteParams } from "@/lib/types";
 
 // `id` here is the URL-encoded current group name (groups are keyed by name, not ObjectId,
 // since a group can exist implicitly just by being referenced on a client record).
-type Params = { params: Promise<{ id: string }> };
+type Params = RouteParams;
 
 export async function PUT(req: NextRequest, { params }: Params) {
   if (!requireAuth(req)) return fail("Unauthorized", 401);

@@ -1,6 +1,6 @@
-import { Schema, model, models, type InferSchemaType } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
-const ClientSchema = new Schema(
+export const ClientSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
     groupName: { type: String, default: "", trim: true },
@@ -14,7 +14,5 @@ const ClientSchema = new Schema(
   },
   { timestamps: true }
 );
-
-export type ClientDoc = InferSchemaType<typeof ClientSchema>;
 
 export default models.Client || model("Client", ClientSchema);

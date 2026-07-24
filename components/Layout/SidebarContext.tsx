@@ -1,11 +1,6 @@
 "use client";
 import { createContext, useContext, useState, type ReactNode } from "react";
-
-type SidebarContextValue = {
-  mobileOpen: boolean;
-  openMobile: () => void;
-  closeMobile: () => void;
-};
+import type { SidebarContextValue } from "@/lib/types";
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
 

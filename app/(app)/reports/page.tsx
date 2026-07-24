@@ -6,14 +6,13 @@ import { useCustomers } from "@/hooks/useCustomers";
 import { useInvoices } from "@/hooks/useInvoices";
 import { usePayments } from "@/hooks/usePayments";
 import { fI, fD, ageD, ost } from "@/lib/calc";
-
-type Tab = "out" | "rcv" | "age" | "grp";
+import type { ReportTab } from "@/lib/types";
 
 export default function ReportsPage() {
   const { customers, loading: l1 } = useCustomers();
   const { invoices, loading: l2 } = useInvoices();
   const { payments, loading: l3 } = usePayments();
-  const [tab, setTab] = useState<Tab>("out");
+  const [tab, setTab] = useState<ReportTab>("out");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 

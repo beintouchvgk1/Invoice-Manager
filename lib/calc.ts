@@ -1,4 +1,4 @@
-export type InvoiceLike = { total?: number; paidAmount?: number };
+import type { InvoiceLike } from "@/lib/types";
 
 export function fI(n: number | string | undefined): string {
   return parseFloat(String(n || 0)).toLocaleString("en-IN", {

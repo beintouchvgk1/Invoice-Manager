@@ -7,5 +7,5 @@ export async function GET(req: NextRequest) {
   if (!token) return fail("Not authenticated", 401);
   const payload = verifyToken(token);
   if (!payload) return fail("Invalid or expired session", 401);
-  return ok({ username: payload.username });
+  return ok({ email: payload.email, role: payload.role });
 }

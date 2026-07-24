@@ -22,11 +22,15 @@ modifying one:
   file, consumed by a `hooks/use{Name}.ts` hook that owns `loading`/`error`/`refresh` state. Follow this
   exact three-layer pattern for a new resource — see `rules/data-pattern.md`.
 - **No Tailwind/shadcn** — see `rules/styling.md`.
-- **Auth**: single hardcoded Admin (`models/Admin.ts`), JWT cookie via `services/auth.service.ts`. There
-  is no self-registration and no password-reset flow — don't add UI for either without the user
-  explicitly asking for the backend work first (this has come up before: the login page intentionally
-  omits "Forgot password?" / "Register" links from a design reference because wiring them would require
-  new backend functionality).
+- **Auth**: `User` (`models/User.ts`: email/password/phone/roleId) + `Role` (`models/Role.ts`:
+  name/description/isActive), JWT cookie via `services/auth.service.ts`. Login is by email. Only a
+  `super_admin` (managed via `/roles` + `/users`, super_admin creates other users) can manage roles/users —
+  gate any new admin-only feature the same way: hide the nav item client-side (`useCurrentUser()`) AND
+  re-check the role fresh from the DB server-side (`requireSuperAdmin()` in `lib/requireAuth.ts`), never
+  one without the other. There is still no public self-registration or self-service password-reset —
+  accounts are created by a super admin via the Users tab, not signed up by the end user.
+- **No static role/status/mode strings** — anything enum-like (role names, cookie name, token TTL) lives
+  in `lib/constants/` and is imported, never re-typed as a literal string in a second file.
 
 ## TypeScript
 - Domain types live in `lib/types.ts` — import from there (`references/types.md`),

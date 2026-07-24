@@ -10,9 +10,9 @@ import { usePayments } from "@/hooks/usePayments";
 import { settingsService } from "@/services/settings.service";
 import { genLedgerPDF } from "@/lib/pdf";
 import { fI, fD } from "@/lib/calc";
-import type { Payment } from "@/lib/types";
+import type { Payment, RouteParams, LedgerEntry } from "@/lib/types";
 
-export default function LedgerPage({ params }: { params: Promise<{ clientId: string }> }) {
+export default function LedgerPage({ params }: RouteParams<"clientId">) {
   const { clientId } = use(params);
   const router = useRouter();
   const { customers, loading: loadingClients } = useCustomers();
@@ -26,8 +26,7 @@ export default function LedgerPage({ params }: { params: Promise<{ clientId: str
   const clientInvoices = invoices.filter((i) => i.clientId === clientId);
   const clientPayments = payments.filter((p) => paymentClientId(p) === clientId);
 
-  type Entry = { date: string; type: "inv" | "rec"; description: string; debit: number; credit: number };
-  const entries: Entry[] = [];
+  const entries: LedgerEntry[] = [];
   clientInvoices.forEach((i) =>
     entries.push({ date: i.date, type: "inv", description: `Invoice No. ${i.invoiceNumber}`, debit: parseFloat(String(i.total || 0)), credit: 0 })
   );

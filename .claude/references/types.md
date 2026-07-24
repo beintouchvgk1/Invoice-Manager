@@ -3,6 +3,11 @@
 All domain types live in `lib/types.ts` — import from there, never redefine a shape inline.
 
 ```typescript
+type Role = { _id: string; name: string; description?: string; isActive: boolean };
+
+// GET /api/users always returns roleId populated (a full Role object), not a raw id.
+type User = { _id: string; email: string; phone?: string; roleId: Role; isActive: boolean };
+
 type Client = {
   _id: string;
   name: string;

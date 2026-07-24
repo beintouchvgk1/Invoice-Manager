@@ -16,7 +16,20 @@ and has no sidebar/header.
 | `/reports` | `(app)/reports/page.tsx` | `useCustomers` + `useInvoices` + `usePayments`, 4 tabs (Outstanding / Received / Ageing / Group-wise) |
 | `/settings` | `(app)/settings/page.tsx` | `useSettings` |
 | `/ledger/[clientId]` | `(app)/ledger/[clientId]/page.tsx` | `useCustomers` + `useInvoices` + `usePayments`, filtered to one client |
-| `/login` | `login/page.tsx` | `authService.login` |
+| `/roles` | `(app)/roles/page.tsx` | `useRoles` — **super_admin only**, nav item hidden otherwise |
+| `/users` | `(app)/users/page.tsx` | `useUsers` + `useRoles` — **super_admin only**, nav item hidden otherwise |
+| `/login` | `login/page.tsx` | `authService.login` (email + password, not username) |
+
+## Auth & roles
+Login is by **email**, not username — the app has a `User` collection (`email`, `password`, `phone`,
+`roleId`) and a separate `Role` collection (`name`, `description`, `isActive`). Role names are
+user-manageable via the `/roles` screen; only the seeded `super_admin` role (constant in
+`lib/constants/roles.ts`, never a raw string) is protected from rename/delete/deactivation.
+`/roles` and `/users` are gated two ways: `components/Layout/Sidebar.tsx` hides the nav items unless
+`useCurrentUser()`'s `role` equals `ROLES.SUPER_ADMIN` (cosmetic only), and every `/api/roles/**` +
+`/api/users/**` route re-checks the role **fresh from the database** via `requireSuperAdmin()` in
+`lib/requireAuth.ts` — never trust the JWT claim alone for this check, since a role can be changed or
+deactivated after a token was issued.
 
 ## Adding a new page — checklist
 1. Create `app/(app)/{route}/page.tsx` (or a new top-level group if it shouldn't share the sidebar).

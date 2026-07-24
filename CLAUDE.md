@@ -14,6 +14,7 @@ assuming otherwise.
 @.claude/rules/data-pattern.md
 @.claude/rules/styling.md
 @.claude/rules/responsive.md
+@.claude/rules/types.md
 @.claude/rules/git-workflow.md
 @.claude/references/design-system.md
 @.claude/references/routes.md
@@ -44,8 +45,13 @@ assuming otherwise.
 6. **Shared code:** before changing anything in `hooks/`, `services/`, `lib/`, or `components/Common/`,
    grep every caller and confirm the change doesn't alter behavior for any of them — else add a new
    function/component instead. (`rules/code-standards.md`)
-7. **Auth is single-admin, no self-registration or password-reset** — don't add UI implying either
-   without the backend work being explicitly requested first.
+7. **Auth is `User` + `Role` based, login by email** — no public self-registration/self-service
+   password reset (accounts are created by a super admin via the Users tab). `/roles` and `/users`
+   are super_admin-only: gate a new admin screen the same double way — hide the nav item client-side
+   AND re-check the role fresh from the DB server-side (`requireSuperAdmin()`), never one without
+   the other.
+8. **No inline types** — every `type`/`interface` lives in `lib/types.ts` (or `models/types.ts` for
+   Mongoose `*Doc` types), never declared inside a component/route/schema file. (`rules/types.md`)
 
 ---
 
@@ -63,20 +69,23 @@ components/
 ├── {Feature}/               Client, Invoice, Group, Payment — table + modal per feature
 hooks/                      use{Name}.ts — {items, loading, error, refresh}
 services/                   http.ts (fetch wrapper) + {name}.service.ts per resource
-lib/                        types.ts (domain types), calc.ts (ost/ageD/fI/fD/td), pdf.ts, dbConnect.ts, ...
-models/                     Mongoose schemas (backend — don't touch for UI tasks)
+lib/                        types.ts (ALL app-wide types), constants/ (roles, auth — no static
+                             strings anywhere else), env.ts (centralized config), calc.ts, pdf.ts, ...
+models/                     Mongoose schemas (backend — don't touch for UI tasks) + types.ts (*Doc types)
 ```
 
 ## Local dev
 ```bash
 npm install
-npm run dev   # http://localhost:8000 (see package.json — port has been changed from the Next.js default)
-npx tsc --noEmit    # type-check
-npx eslint app components   # lint
+npm run dev              # http://localhost:8000 (port changed from Next.js default, see package.json)
+npm run seed:super-admin # creates the super_admin role + super admin user if they don't exist yet
+npx tsc --noEmit         # type-check
+npx eslint app components lib models scripts services hooks middleware.ts   # lint
 ```
-`.env.local` needs `MONGODB_URI` (use the non-SRV/standard connection string, not `mongodb+srv://` —
-this environment has had DNS SRV-lookup issues with certain routers) and `JWT_SECRET`.
+Config is centralized in one `.env` file (not `.env.local` — see `lib/env.ts`'s header comment) with
+an `APP_ENV` switch key (`local`/`staging`/`production`) selecting which `MONGODB_URI_*` is active.
+Everything reads from `lib/env.ts`, never `process.env` directly.
 
 ## Security
-Never commit `.env`/`.env.local`, the Mongo connection string, or `JWT_SECRET` — not in code, commit
-messages, or `.claude/`. Real values stay in `.env.local` (gitignored) only.
+Never commit `.env`, the Mongo connection strings, or `JWT_SECRET` — not in code, commit messages, or
+`.claude/`. Real values stay in the gitignored `.env` only.

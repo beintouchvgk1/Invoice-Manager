@@ -1,4 +1,4 @@
-import { Schema, model, models, type InferSchemaType } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const InvoiceItemSchema = new Schema(
   {
@@ -10,7 +10,7 @@ const InvoiceItemSchema = new Schema(
   { _id: false }
 );
 
-const InvoiceSchema = new Schema(
+export const InvoiceSchema = new Schema(
   {
     invoiceNumber: { type: String, required: true, unique: true },
     date: { type: String, required: true },
@@ -24,7 +24,5 @@ const InvoiceSchema = new Schema(
   },
   { timestamps: true }
 );
-
-export type InvoiceDoc = InferSchemaType<typeof InvoiceSchema>;
 
 export default models.Invoice || model("Invoice", InvoiceSchema);

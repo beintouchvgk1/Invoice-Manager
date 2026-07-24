@@ -9,11 +9,9 @@ import { invoiceService } from "@/services/invoice.service";
 import { settingsService } from "@/services/settings.service";
 import { genInvoicePDF } from "@/lib/pdf";
 import { fI, td } from "@/lib/calc";
-import type { Invoice, InvoiceItem } from "@/lib/types";
+import type { Invoice, InvoiceItem, InvoiceFormRow } from "@/lib/types";
 
-type Row = InvoiceItem & { key: string };
-
-function blankRow(): Row {
+function blankRow(): InvoiceFormRow {
   return { key: crypto.randomUUID(), category: "", description: "", detail: "", amount: 0 };
 }
 
@@ -27,7 +25,7 @@ export function InvoiceForm({ invoice }: { invoice?: Invoice }) {
   const [clientId, setClientId] = useState(invoice?.clientId || "");
   const [paymentType, setPaymentType] = useState<"credit" | "cash">(invoice?.paymentType || "credit");
   const [notes, setNotes] = useState(invoice?.notes || "");
-  const [rows, setRows] = useState<Row[]>(
+  const [rows, setRows] = useState<InvoiceFormRow[]>(
     invoice?.items?.length
       ? invoice.items.map((i) => ({ ...i, key: crypto.randomUUID() }))
       : [blankRow(), blankRow(), blankRow()]

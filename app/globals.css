@@ -127,18 +127,18 @@ body {
   box-shadow: 0 2px 8px rgba(29, 78, 216, 0.35);
 }
 #sb nav a.active svg { opacity: 1; }
-#sb nav a.logout { margin-top: 8px; border-top: 1px solid var(--sidebar-border); border-radius: 0; padding-top: 14px; color: var(--sidebar-text-dim); }
-#sb nav a.logout:hover { color: #fff; background: transparent; }
 #sb.collapsed nav a { justify-content: center; padding: 10px; }
-.ver { padding: 12px 18px; color: var(--sidebar-text-dim); font-size: 10.5px; border-top: 1px solid var(--sidebar-border); white-space: nowrap; overflow: hidden; }
-#sb.collapsed .ver { text-align: center; padding: 12px 4px; }
+
+/* Pushes both the collapse toggle and the user panel to the bottom of the sidebar,
+   regardless of which of the two is actually rendered (mobile has no collapse toggle). */
+.sidebar-footer { margin-top: auto; }
 
 .collapse-toggle {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  margin: auto 10px 6px;
+  margin: 0 10px 6px;
   border-radius: var(--radius-md);
   color: var(--sidebar-text-dim);
   font-size: 12px;
@@ -150,7 +150,50 @@ body {
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 .collapse-toggle:hover { background: var(--sidebar-hover); color: #fff; }
-#sb.collapsed .collapse-toggle { justify-content: center; margin: auto 8px 6px; }
+#sb.collapsed .collapse-toggle { justify-content: center; margin: 0 8px 6px; }
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--sidebar-border);
+}
+.sidebar-user-avatar {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), #3b82f6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+.sidebar-user-info { flex: 1; min-width: 0; }
+.sidebar-user-email {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-user-role { color: var(--sidebar-text-dim); font-size: 10.5px; margin-top: 1px; }
+.sidebar-user-logout {
+  background: none;
+  border: none;
+  color: var(--sidebar-text-dim);
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  border-radius: var(--radius-md);
+  flex: none;
+}
+.sidebar-user-logout:hover { color: #fff; background: var(--sidebar-hover); }
+#sb.collapsed .sidebar-user { justify-content: center; padding: 12px 4px; flex-wrap: wrap; }
 
 .sidebar-close {
   display: none;
@@ -397,6 +440,52 @@ input[type="checkbox"] { accent-color: var(--primary); width: 15px; height: 15px
 .al { padding: 9px 13px; border-radius: var(--radius-md); font-size: 12.5px; margin-bottom: 10px; border: 1px solid transparent; font-weight: 500; }
 .alok { background: var(--success-bg); color: var(--success); border-color: var(--success-border); }
 .aler { background: var(--danger-bg); color: var(--danger); border-color: var(--danger-border); }
+
+/* Floating toast stack — used via useToast() for standalone, fire-and-forget
+   notifications (e.g. a table-row action outside any form/modal). The inline
+   .al/.alok/.aler banner above stays the pattern for validation errors next to
+   a specific field/modal; this is for everything else that used to be alert(). */
+.toast-stack {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(360px, calc(100vw - 32px));
+}
+.toast-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 14px;
+  border-radius: var(--radius-md);
+  font-size: 12.5px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  box-shadow: var(--shadow-lg);
+  animation: toast-in 0.2s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-item { animation: none; }
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.toast-item span { flex: 1; }
+.toast-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  color: inherit;
+  opacity: 0.6;
+}
+.toast-close:hover { opacity: 1; }
 
 /* ---------- Report tabs & filters ---------- */
 .rtab {

@@ -1,4 +1,4 @@
-type ApiResponse<T> = { success: true; data: T } | { success: false; error: string };
+import type { ApiResponse } from "@/lib/types";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {

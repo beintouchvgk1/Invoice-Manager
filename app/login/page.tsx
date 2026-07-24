@@ -6,7 +6,7 @@ import { Toast } from "@/components/Common/Toast";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState("");
@@ -15,14 +15,14 @@ export default function LoginPage() {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
-    if (!username.trim() || !password) {
-      setError("Username and password are required.");
+    if (!email.trim() || !password) {
+      setError("Email and password are required.");
       return;
     }
     setBusy(true);
     try {
-      await authService.login(username.trim(), password);
-      if (remember) localStorage.setItem("vgk_remember_user", username.trim());
+      await authService.login(email.trim(), password);
+      if (remember) localStorage.setItem("vgk_remember_user", email.trim());
       else localStorage.removeItem("vgk_remember_user");
       router.push("/dashboard");
       router.refresh();
@@ -46,12 +46,13 @@ export default function LoginPage() {
 
         <div className="login-field">
           <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="Username"
-            aria-label="Username"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email"
+            aria-label="Email"
             autoFocus
-            autoComplete="username"
+            autoComplete="email"
           />
           <span className="icon">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

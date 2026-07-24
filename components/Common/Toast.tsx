@@ -1,6 +1,5 @@
 "use client";
-
-export type ToastKind = "ok" | "err";
+import type { ToastKind } from "@/lib/types";
 
 export function Toast({ kind, message }: { kind: ToastKind; message: string }) {
   if (!message) return null;

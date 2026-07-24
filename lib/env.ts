@@ -9,6 +9,8 @@
 // On Vercel, set APP_ENV=staging for the Preview scope and APP_ENV=production
 // for the Production scope in the project's Environment Variables dashboard.
 
+import type { AppEnv } from "@/lib/types";
+
 function required(name: string): string {
   const value = process.env[name];
   if (!value) {
@@ -16,8 +18,6 @@ function required(name: string): string {
   }
   return value;
 }
-
-type AppEnv = "local" | "staging" | "production";
 
 const VALID_APP_ENVS: AppEnv[] = ["local", "staging", "production"];
 
@@ -43,7 +43,8 @@ export const env = {
   appEnv,
   mongodbUri: resolveMongodbUri(appEnv),
   jwtSecret: required("JWT_SECRET"),
-  seedAdminUser: process.env.SEED_ADMIN_USER || "admin",
-  seedAdminPass: process.env.SEED_ADMIN_PASS || "admin123",
+  seedSuperAdminEmail: process.env.SEED_SUPER_ADMIN_EMAIL || "beintouch.vgk@gmail.com",
+  seedSuperAdminPassword: process.env.SEED_SUPER_ADMIN_PASSWORD || "admin123",
+  seedSuperAdminPhone: process.env.SEED_SUPER_ADMIN_PHONE || "",
   isProduction: process.env.NODE_ENV === "production",
 } as const;

@@ -1,6 +1,6 @@
-import { Schema, model, models, type InferSchemaType } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
-const PaymentSchema = new Schema(
+export const PaymentSchema = new Schema(
   {
     clientId: { type: Schema.Types.ObjectId, ref: "Client", required: true },
     invoiceId: { type: Schema.Types.ObjectId, ref: "Invoice", default: null },
@@ -13,7 +13,5 @@ const PaymentSchema = new Schema(
   },
   { timestamps: true }
 );
-
-export type PaymentDoc = InferSchemaType<typeof PaymentSchema>;
 
 export default models.Payment || model("Payment", PaymentSchema);

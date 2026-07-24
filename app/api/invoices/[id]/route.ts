@@ -5,8 +5,9 @@ import Payment from "@/models/Payment";
 import { requireAuth } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isObjectId, isValidDateStr, validateInvoiceItems } from "@/lib/validators";
+import type { RouteParams } from "@/lib/types";
 
-type Params = { params: Promise<{ id: string }> };
+type Params = RouteParams;
 
 export async function GET(req: NextRequest, { params }: Params) {
   if (!requireAuth(req)) return fail("Unauthorized", 401);

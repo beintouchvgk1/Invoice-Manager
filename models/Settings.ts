@@ -1,4 +1,4 @@
-import { Schema, model, models, type InferSchemaType } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const DEFAULT_CATEGORIES = [
   "Income Tax Return Filing",
@@ -55,7 +55,7 @@ const InvoiceNumberingSchema = new Schema(
   { _id: false }
 );
 
-const SettingsSchema = new Schema(
+export const SettingsSchema = new Schema(
   {
     firmDetails: { type: FirmDetailsSchema, default: () => ({}) },
     bankAccount: { type: BankAccountSchema, default: () => ({}) },
@@ -65,7 +65,5 @@ const SettingsSchema = new Schema(
   },
   { timestamps: true }
 );
-
-export type SettingsDoc = InferSchemaType<typeof SettingsSchema>;
 
 export default models.Settings || model("Settings", SettingsSchema);

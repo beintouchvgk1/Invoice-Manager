@@ -1,11 +1,6 @@
 import mongoose from "mongoose";
 import { env } from "@/lib/env";
-
-type MongooseCache = {
-  conn: typeof mongoose | null;
-  promise: Promise<typeof mongoose> | null;
-  syncedModels: Set<string>;
-};
+import type { MongooseCache } from "@/lib/types";
 
 declare global {
   var _mongooseCache: MongooseCache | undefined;

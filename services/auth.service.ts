@@ -1,8 +1,8 @@
 import { http } from "./http";
 
 export const authService = {
-  login: (username: string, password: string) =>
-    http.post<{ username: string }>("/api/auth/login", { username, password }),
+  login: (email: string, password: string) =>
+    http.post<{ email: string; role: string }>("/api/auth/login", { email, password }),
   logout: () => http.post<{ loggedOut: true }>("/api/auth/logout"),
-  verify: () => http.get<{ username: string }>("/api/auth/verify"),
+  verify: () => http.get<{ email: string; role: string }>("/api/auth/verify"),
 };
