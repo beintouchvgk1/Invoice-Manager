@@ -13,6 +13,21 @@ import { fI, fD, ageD, ost } from "@/lib/calc";
 import { PaymentModal } from "@/components/Payment/PaymentModal";
 import { backupService } from "@/services/backup.service";
 
+const STAT_ICONS = {
+  billed: "M9 12h6M9 16h6M9 8h1M7 21h10a2 2 0 0 0 2-2V6.5L14.5 2H7a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2Z",
+  collected: "M2 8h20M2 8v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v2M6 16h4",
+  outstanding: "M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z",
+  overdue: "M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z",
+};
+
+function StatIcon({ path }: { path: string }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d={path} />
+    </svg>
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { customers } = useCustomers();
@@ -83,20 +98,32 @@ export default function DashboardPage() {
           <>
             <div className="sg">
               <div className="sc">
-                <div className="lb">Total Billed</div>
-                <div className="vl">Rs. {fI(totalBilled)}</div>
+                <div className="sc-icon tone-primary"><StatIcon path={STAT_ICONS.billed} /></div>
+                <div className="sc-body">
+                  <div className="lb">Total Billed</div>
+                  <div className="vl">Rs. {fI(totalBilled)}</div>
+                </div>
               </div>
-              <div className="sc" style={{ borderLeftColor: "#059669" }}>
-                <div className="lb">Income Collected</div>
-                <div className="vl" style={{ color: "#059669" }}>Rs. {fI(totalCollected)}</div>
+              <div className="sc">
+                <div className="sc-icon tone-success"><StatIcon path={STAT_ICONS.collected} /></div>
+                <div className="sc-body">
+                  <div className="lb">Income Collected</div>
+                  <div className="vl tone-success">Rs. {fI(totalCollected)}</div>
+                </div>
               </div>
-              <div className="sc" style={{ borderLeftColor: "#d97706" }}>
-                <div className="lb">Outstanding</div>
-                <div className="vl" style={{ color: "#d97706" }}>Rs. {fI(totalOutstanding)}</div>
+              <div className="sc">
+                <div className="sc-icon tone-warning"><StatIcon path={STAT_ICONS.outstanding} /></div>
+                <div className="sc-body">
+                  <div className="lb">Outstanding</div>
+                  <div className="vl tone-warning">Rs. {fI(totalOutstanding)}</div>
+                </div>
               </div>
-              <div className="sc" style={{ borderLeftColor: "#dc2626" }}>
-                <div className="lb">Overdue (30+ days)</div>
-                <div className="vl" style={{ color: "#dc2626" }}>Rs. {fI(overdueAmount)}</div>
+              <div className="sc">
+                <div className="sc-icon tone-danger"><StatIcon path={STAT_ICONS.overdue} /></div>
+                <div className="sc-body">
+                  <div className="lb">Overdue (30+ days)</div>
+                  <div className="vl tone-danger">Rs. {fI(overdueAmount)}</div>
+                </div>
               </div>
             </div>
 

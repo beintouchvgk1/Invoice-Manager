@@ -9,9 +9,12 @@ export function SkeletonStatGrid({ count = 4 }: { count?: number }) {
     <div className="sg">
       {Array.from({ length: count }).map((_, i) => (
         <div className="sc" key={i}>
-          <SkeletonBlock width={90} height={9} />
-          <div style={{ marginTop: 10 }}>
-            <SkeletonBlock width={110} height={20} />
+          <SkeletonBlock width={42} height={42} style={{ borderRadius: "var(--radius-md)" }} />
+          <div style={{ flex: 1 }}>
+            <SkeletonBlock width={90} height={9} />
+            <div style={{ marginTop: 10 }}>
+              <SkeletonBlock width={110} height={20} />
+            </div>
           </div>
         </div>
       ))}
