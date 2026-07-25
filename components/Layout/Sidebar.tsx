@@ -48,7 +48,7 @@ const NAV = [
   { id: "py", href: "/payments", icon: ICONS.payments, label: "Payments", perm: "payments.view" },
   { id: "rp", href: "/reports", icon: ICONS.reports, label: "Reports", perm: "reports.view" },
   { id: "st", href: "/settings", icon: ICONS.settings, label: "Settings", perm: "settings.view" },
-  { id: "rl", href: "/roles", icon: ICONS.roles, label: "Roles", perm: "roles.view" },
+  { id: "rl", href: "/roles", icon: ICONS.roles, label: "Roles & Permissions", perm: "roles.view" },
   { id: "us", href: "/users", icon: ICONS.users, label: "Users", perm: "users.view" },
 ];
 
@@ -127,7 +127,7 @@ export function Sidebar() {
               onClick={closeMobile}
             >
               <Icon path={item.icon} />
-              {!railCollapsed && item.label}
+              {!railCollapsed && <span className="nav-label">{item.label}</span>}
             </Link>
           ))}
         </nav>
