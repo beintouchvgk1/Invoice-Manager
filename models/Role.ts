@@ -5,6 +5,7 @@ export const RoleSchema = new Schema(
     name: { type: String, required: true, unique: true, trim: true },
     description: { type: String, default: "Description for this role" },
     isActive: { type: Boolean, default: true },
+    permissions: { type: [String], default: [] },
   },
   { timestamps: true }
 );

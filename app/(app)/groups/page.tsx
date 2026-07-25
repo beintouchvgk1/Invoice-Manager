@@ -4,17 +4,19 @@ import { Header } from "@/components/Layout/Header";
 import { SkeletonTable } from "@/components/Common/Skeleton";
 import { GroupModal } from "@/components/Group/GroupModal";
 import { useGroups } from "@/hooks/useGroups";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { fI } from "@/lib/calc";
 
 export default function GroupsPage() {
   const { groups, loading, refresh } = useGroups();
+  const { can } = useCurrentUser();
   const [editing, setEditing] = useState<string | null | undefined>(undefined);
 
   return (
     <>
       <Header
         title="Groups"
-        actions={<button className="btn bp sm" onClick={() => setEditing(null)}>+ New Group</button>}
+        actions={can("groups.create") && <button className="btn bp sm" onClick={() => setEditing(null)}>+ New Group</button>}
       />
       <div id="ct">
         {loading ? (
@@ -41,7 +43,9 @@ export default function GroupsPage() {
                       </td>
                       <td>
                         <div className="ac">
-                          <button className="btn sm bp" onClick={() => setEditing(g.name)}>Edit / Members</button>
+                          {can("groups.edit") && (
+                            <button className="btn sm bp" onClick={() => setEditing(g.name)}>Edit / Members</button>
+                          )}
                         </div>
                       </td>
                     </tr>

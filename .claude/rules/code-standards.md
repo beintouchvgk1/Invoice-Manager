@@ -23,14 +23,18 @@ modifying one:
   exact three-layer pattern for a new resource — see `rules/data-pattern.md`.
 - **No Tailwind/shadcn** — see `rules/styling.md`.
 - **Auth**: `User` (`models/User.ts`: email/password/phone/roleId) + `Role` (`models/Role.ts`:
-  name/description/isActive), JWT cookie via `services/auth.service.ts`. Login is by email. Only a
-  `super_admin` (managed via `/roles` + `/users`, super_admin creates other users) can manage roles/users —
-  gate any new admin-only feature the same way: hide the nav item client-side (`useCurrentUser()`) AND
-  re-check the role fresh from the DB server-side (`requireSuperAdmin()` in `lib/requireAuth.ts`), never
-  one without the other. There is still no public self-registration or self-service password-reset —
-  accounts are created by a super admin via the Users tab, not signed up by the end user.
-- **No static role/status/mode strings** — anything enum-like (role names, cookie name, token TTL) lives
-  in `lib/constants/` and is imported, never re-typed as a literal string in a second file.
+  name/description/isActive/permissions), JWT cookie via `services/auth.service.ts`. Login is by
+  email. Roles carry a granular `permissions: string[]` (catalog in `lib/constants/permissions.ts`),
+  checked fresh from the DB per-request via `requirePermission(req, "module.action")` (a `super_admin`
+  always passes). Gate a new feature route/nav item the same double way: hide the nav item client-side
+  (`useCurrentUser().can(...)`) AND re-check server-side, never one without the other. `/roles` +
+  `/users` are the one exception — stay hard-gated to `super_admin` via `requireSuperAdmin()`, not
+  permission-assignable, since granting that access to a custom role would let it self-escalate. There
+  is still no public self-registration or self-service password-reset — accounts are created by a
+  super admin via the Users tab, not signed up by the end user.
+- **No static role/status/mode strings** — anything enum-like (role names, permission keys, cookie
+  name, token TTL) lives in `lib/constants/` and is imported, never re-typed as a literal string in a
+  second file.
 
 ## TypeScript
 - Domain types live in `lib/types.ts` — import from there (`references/types.md`),

@@ -1,5 +1,6 @@
 import type { Mongoose } from "mongoose";
 import type { ROLES } from "@/lib/constants/roles";
+import type { PERMISSION_MODULES } from "@/lib/constants/permissions";
 
 // --- Next.js API route dynamic segment params (app/api/**/[id]/route.ts) ---
 export type RouteParams<K extends string = "id"> = { params: Promise<Record<K, string>> };
@@ -26,6 +27,13 @@ export type AuthPayload = {
 
 // --- lib/constants/roles.ts ---
 export type RoleName = (typeof ROLES)[keyof typeof ROLES];
+
+// --- lib/constants/permissions.ts ---
+export type PermissionModule = (typeof PERMISSION_MODULES)[number];
+export type PermissionAction = PermissionModule["actions"][number];
+
+// --- hooks/useCurrentUser.ts ---
+export type CurrentUser = { email: string | null; role: string | null; permissions: string[]; loading: boolean };
 
 // --- lib/calc.ts ---
 export type InvoiceLike = { total?: number; paidAmount?: number };
@@ -61,6 +69,7 @@ export type Role = {
   name: string;
   description?: string;
   isActive: boolean;
+  permissions: string[];
 };
 
 // GET /api/users always returns roleId populated (see requireAuth/route.ts .populate("roleId")),

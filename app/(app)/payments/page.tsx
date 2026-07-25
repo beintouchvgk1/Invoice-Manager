@@ -8,6 +8,7 @@ import { PaymentModal } from "@/components/Payment/PaymentModal";
 import { usePayments } from "@/hooks/usePayments";
 import { useInvoices } from "@/hooks/useInvoices";
 import { useCustomers } from "@/hooks/useCustomers";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { paymentService } from "@/services/payment.service";
 import { settingsService } from "@/services/settings.service";
 import { genReceiptPDF } from "@/lib/pdf";
@@ -19,6 +20,7 @@ function PaymentsPageInner() {
   const { payments, loading, refresh } = usePayments();
   const { invoices, refresh: refreshInvoices } = useInvoices();
   const { customers } = useCustomers();
+  const { can } = useCurrentUser();
   const [modal, setModal] = useState<{ payment?: Payment; clientId?: string; invoiceId?: string } | null>(null);
 
   useEffect(() => {
@@ -51,7 +53,7 @@ function PaymentsPageInner() {
     <>
       <Header
         title="Payments"
-        actions={<button className="btn bp sm" onClick={() => setModal({})}>+ Add Payment</button>}
+        actions={can("payments.create") && <button className="btn bp sm" onClick={() => setModal({})}>+ Add Payment</button>}
       />
       <div id="ct">
         {loading ? (
@@ -88,8 +90,12 @@ function PaymentsPageInner() {
                         <td>
                           <div className="ac">
                             <button className="btn sm bs" onClick={() => handlePrintReceipt(p)}>Receipt PDF</button>
-                            <button className="btn sm bp" onClick={() => setModal({ payment: p })}>Edit</button>
-                            <button className="btn sm brd" onClick={() => handleDelete(p._id)}>Del</button>
+                            {can("payments.edit") && (
+                              <button className="btn sm bp" onClick={() => setModal({ payment: p })}>Edit</button>
+                            )}
+                            {can("payments.delete") && (
+                              <button className="btn sm brd" onClick={() => handleDelete(p._id)}>Del</button>
+                            )}
                           </div>
                         </td>
                       </tr>

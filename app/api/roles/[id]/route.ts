@@ -5,7 +5,7 @@ import User from "@/models/User";
 import { requireSuperAdmin } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isNonEmptyString } from "@/lib/validators";
-import { ROLES } from "@/lib/constants";
+import { ROLES, isAssignablePermission } from "@/lib/constants";
 import type { RouteParams } from "@/lib/types";
 
 type Params = RouteParams;
@@ -34,6 +34,16 @@ export async function PUT(req: NextRequest, { params }: Params) {
   if (typeof body.isActive === "boolean" && body.isActive !== role.isActive) {
     if (isSuperAdminRole && !body.isActive) return fail(`The "${ROLES.SUPER_ADMIN}" role cannot be deactivated`, 400);
     role.isActive = body.isActive;
+  }
+
+  if (Array.isArray(body.permissions)) {
+    if (isSuperAdminRole) {
+      // The super admin always holds every permission — silently ignore attempts
+      // to edit it rather than erroring, since the UI renders its checkboxes
+      // disabled anyway.
+    } else {
+      role.permissions = body.permissions.filter(isAssignablePermission);
+    }
   }
 
   await role.save();

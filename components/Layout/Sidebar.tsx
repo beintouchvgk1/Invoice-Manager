@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { useSidebarContext } from "@/components/Layout/SidebarContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { ROLES } from "@/lib/constants";
 
 function Icon({ path }: { path: string }) {
   return (
@@ -42,18 +41,15 @@ const ICONS = {
 };
 
 const NAV = [
-  { id: "da", href: "/dashboard", icon: ICONS.dashboard, label: "Dashboard" },
-  { id: "iv", href: "/invoices", icon: ICONS.invoices, label: "Invoices" },
-  { id: "cl", href: "/customers", icon: ICONS.clients, label: "Clients" },
-  { id: "gr", href: "/groups", icon: ICONS.groups, label: "Groups" },
-  { id: "py", href: "/payments", icon: ICONS.payments, label: "Payments" },
-  { id: "rp", href: "/reports", icon: ICONS.reports, label: "Reports" },
-  { id: "st", href: "/settings", icon: ICONS.settings, label: "Settings" },
-];
-
-const SUPER_ADMIN_NAV = [
-  { id: "rl", href: "/roles", icon: ICONS.roles, label: "Roles" },
-  { id: "us", href: "/users", icon: ICONS.users, label: "Users" },
+  { id: "da", href: "/dashboard", icon: ICONS.dashboard, label: "Dashboard", perm: "dashboard.view" },
+  { id: "iv", href: "/invoices", icon: ICONS.invoices, label: "Invoices", perm: "invoices.view" },
+  { id: "cl", href: "/customers", icon: ICONS.clients, label: "Clients", perm: "customers.view" },
+  { id: "gr", href: "/groups", icon: ICONS.groups, label: "Groups", perm: "groups.view" },
+  { id: "py", href: "/payments", icon: ICONS.payments, label: "Payments", perm: "payments.view" },
+  { id: "rp", href: "/reports", icon: ICONS.reports, label: "Reports", perm: "reports.view" },
+  { id: "st", href: "/settings", icon: ICONS.settings, label: "Settings", perm: "settings.view" },
+  { id: "rl", href: "/roles", icon: ICONS.roles, label: "Roles", perm: "roles.view" },
+  { id: "us", href: "/users", icon: ICONS.users, label: "Users", perm: "users.view" },
 ];
 
 const COLLAPSE_KEY = "vgk_sidebar_collapsed";
@@ -65,8 +61,8 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const { mobileOpen, closeMobile } = useSidebarContext();
-  const { email, role } = useCurrentUser();
-  const nav = role === ROLES.SUPER_ADMIN ? [...NAV, ...SUPER_ADMIN_NAV] : NAV;
+  const { email, role, can } = useCurrentUser();
+  const nav = NAV.filter((item) => can(item.perm));
 
   useEffect(() => {
     setCollapsed(localStorage.getItem(COLLAPSE_KEY) === "1");

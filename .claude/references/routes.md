@@ -20,16 +20,32 @@ and has no sidebar/header.
 | `/users` | `(app)/users/page.tsx` | `useUsers` + `useRoles` — **super_admin only**, nav item hidden otherwise |
 | `/login` | `login/page.tsx` | `authService.login` (email + password, not username) |
 
-## Auth & roles
+## Auth, roles & permissions
 Login is by **email**, not username — the app has a `User` collection (`email`, `password`, `phone`,
-`roleId`) and a separate `Role` collection (`name`, `description`, `isActive`). Role names are
-user-manageable via the `/roles` screen; only the seeded `super_admin` role (constant in
+`roleId`) and a separate `Role` collection (`name`, `description`, `isActive`, `permissions: string[]`).
+Role names are user-manageable via the `/roles` screen; only the seeded `super_admin` role (constant in
 `lib/constants/roles.ts`, never a raw string) is protected from rename/delete/deactivation.
-`/roles` and `/users` are gated two ways: `components/Layout/Sidebar.tsx` hides the nav items unless
-`useCurrentUser()`'s `role` equals `ROLES.SUPER_ADMIN` (cosmetic only), and every `/api/roles/**` +
-`/api/users/**` route re-checks the role **fresh from the database** via `requireSuperAdmin()` in
-`lib/requireAuth.ts` — never trust the JWT claim alone for this check, since a role can be changed or
-deactivated after a token was issued.
+
+**Granular per-tab permissions** (view/create/edit/delete per module — dashboard, invoices, customers,
+groups, payments, reports, settings, roles, users) live in `lib/constants/permissions.ts`
+(`PERMISSION_MODULES`/`ALL_PERMISSIONS`/`ASSIGNABLE_PERMISSIONS`) and are edited on the `/roles` page's
+permission grid (`app/(app)/roles/page.tsx`). Every feature API route re-checks a specific permission
+**fresh from the database** via `requirePermission(req, "module.action")` in `lib/requireAuth.ts` — a
+`super_admin` always passes regardless of its stored `permissions` array (see
+`lib/permissionSeeder.ts`, which runs on server boot via `instrumentation.ts` and keeps that role synced
+to every permission that exists). Client-side, `useCurrentUser()` exposes `can(permission)` — used by
+`Sidebar.tsx` to filter nav items and by each feature page to hide Create/Edit/Delete controls; this is
+cosmetic only, the API route is the real gate.
+
+**`roles` and `users` module permissions are not actually assignable** to any role other than
+`super_admin` — `/api/roles/**` and `/api/users/**` stay hard-gated to `ROLES.SUPER_ADMIN` via
+`requireSuperAdmin()` (not `requirePermission()`), to prevent a custom role from granting itself
+admin-management access. `ASSIGNABLE_PERMISSIONS` (everything except `roles.*`/`users.*`) is what the
+API actually persists onto a non-super-admin role, and the permission grid hides those two modules for
+every role except `super_admin`. `/roles` and `/users` nav items are still driven by `can("roles.view")`
+/`can("users.view")` — which, given the above, can only ever be true for `super_admin` — so don't
+"fix" this by hardcoding a `role === ROLES.SUPER_ADMIN` nav check instead; the permission-based check
+is intentional and already correct.
 
 ## Adding a new page — checklist
 1. Create `app/(app)/{route}/page.tsx` (or a new top-level group if it shouldn't share the sidebar).

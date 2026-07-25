@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Invoice from "@/models/Invoice";
 import Payment from "@/models/Payment";
-import { requireAuth } from "@/lib/requireAuth";
+import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isObjectId, isValidDateStr, validateInvoiceItems } from "@/lib/validators";
 import type { RouteParams } from "@/lib/types";
@@ -10,7 +10,7 @@ import type { RouteParams } from "@/lib/types";
 type Params = RouteParams;
 
 export async function GET(req: NextRequest, { params }: Params) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "invoices.view"))) return fail("Unauthorized", 401);
   const { id } = await params;
   if (!isObjectId(id)) return fail("Invalid invoice id", 400);
   await connectDB();
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "invoices.edit"))) return fail("Unauthorized", 401);
   const { id } = await params;
   if (!isObjectId(id)) return fail("Invalid invoice id", 400);
   const body = await req.json().catch(() => null);
@@ -66,7 +66,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "invoices.delete"))) return fail("Unauthorized", 401);
   const { id } = await params;
   if (!isObjectId(id)) return fail("Invalid invoice id", 400);
 

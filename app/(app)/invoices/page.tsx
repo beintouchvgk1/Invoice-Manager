@@ -6,6 +6,7 @@ import { InvoiceTable } from "@/components/Invoice/InvoiceTable";
 import { usePrintInvoice } from "@/components/Invoice/InvoicePreview";
 import { useInvoices } from "@/hooks/useInvoices";
 import { useCustomers } from "@/hooks/useCustomers";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { invoiceService } from "@/services/invoice.service";
 import type { Invoice } from "@/lib/types";
 
@@ -13,6 +14,7 @@ export default function InvoicesPage() {
   const router = useRouter();
   const { invoices, loading, refresh } = useInvoices();
   const { customers } = useCustomers();
+  const { can } = useCurrentUser();
   const printInvoice = usePrintInvoice();
 
   async function handleDelete(id: string) {
@@ -30,7 +32,11 @@ export default function InvoicesPage() {
     <>
       <Header
         title="Invoices"
-        actions={<button className="btn bp sm" onClick={() => router.push("/invoices/new")}>+ New Invoice</button>}
+        actions={
+          can("invoices.create") && (
+            <button className="btn bp sm" onClick={() => router.push("/invoices/new")}>+ New Invoice</button>
+          )
+        }
       />
       <div id="ct">
         {loading ? (
@@ -42,6 +48,8 @@ export default function InvoicesPage() {
             onDelete={handleDelete}
             onPrint={handlePrint}
             onAddPayment={(invoice) => router.push(`/payments?invoiceId=${invoice._id}&clientId=${invoice.clientId}`)}
+            canEdit={can("invoices.edit")}
+            canDelete={can("invoices.delete")}
           />
         )}
       </div>

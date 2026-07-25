@@ -4,6 +4,7 @@ import Role from "@/models/Role";
 import { requireSuperAdmin } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isNonEmptyString } from "@/lib/validators";
+import { isAssignablePermission } from "@/lib/constants";
 
 export async function GET(req: NextRequest) {
   if (!(await requireSuperAdmin(req))) return fail("Unauthorized", 401);
@@ -22,10 +23,13 @@ export async function POST(req: NextRequest) {
   const existing = await Role.findOne({ name });
   if (existing) return fail("A role with this name already exists", 409);
 
+  const permissions = Array.isArray(body.permissions) ? body.permissions.filter(isAssignablePermission) : [];
+
   const role = await Role.create({
     name,
     description: isNonEmptyString(body.description) ? body.description.trim() : "",
     isActive: true,
+    permissions,
   });
   return ok(role, 201);
 }

@@ -4,14 +4,19 @@ async function main() {
   const { default: User } = await import("../models/User");
   const { hashPassword } = await import("../lib/bcrypt");
   const { env } = await import("../lib/env");
-  const { ROLES } = await import("../lib/constants");
+  const { ROLES, ALL_PERMISSIONS } = await import("../lib/constants");
 
   await connectDB();
 
   let role = await Role.findOne({ name: ROLES.SUPER_ADMIN });
   if (!role) {
-    role = await Role.create({ name: ROLES.SUPER_ADMIN, description: "Full system access", isActive: true });
-    console.log(`Created role "${ROLES.SUPER_ADMIN}".`);
+    role = await Role.create({
+      name: ROLES.SUPER_ADMIN,
+      description: "Full system access",
+      isActive: true,
+      permissions: ALL_PERMISSIONS,
+    });
+    console.log(`Created role "${ROLES.SUPER_ADMIN}" with all ${ALL_PERMISSIONS.length} permissions.`);
   } else {
     console.log(`Role "${ROLES.SUPER_ADMIN}" already exists.`);
   }

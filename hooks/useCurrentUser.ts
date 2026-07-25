@@ -5,6 +5,7 @@ import { authService } from "@/services/auth.service";
 export function useCurrentUser() {
   const [email, setEmail] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -13,10 +14,15 @@ export function useCurrentUser() {
       .then((res) => {
         setEmail(res.email);
         setRole(res.role);
+        setPermissions(res.permissions);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  return { email, role, loading };
+  function can(permission: string): boolean {
+    return permissions.includes("*") || permissions.includes(permission);
+  }
+
+  return { email, role, permissions, can, loading };
 }

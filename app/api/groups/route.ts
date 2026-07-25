@@ -3,13 +3,13 @@ import { connectDB } from "@/lib/mongodb";
 import Group from "@/models/Group";
 import Client from "@/models/Client";
 import Invoice from "@/models/Invoice";
-import { requireAuth } from "@/lib/requireAuth";
+import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isNonEmptyString } from "@/lib/validators";
 import { ost } from "@/lib/calc";
 
 export async function GET(req: NextRequest) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "groups.view"))) return fail("Unauthorized", 401);
   await connectDB();
 
   const [groupDocs, clients] = await Promise.all([Group.find().lean(), Client.find().lean()]);
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "groups.create"))) return fail("Unauthorized", 401);
   const body = await req.json().catch(() => null);
   if (!body || !isNonEmptyString(body.name)) return fail("Group name is required", 400);
 

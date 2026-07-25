@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Settings from "@/models/Settings";
-import { requireAuth } from "@/lib/requireAuth";
+import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 
 export async function GET(req: NextRequest) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "settings.view"))) return fail("Unauthorized", 401);
   await connectDB();
   let settings = await Settings.findOne();
   if (!settings) settings = await Settings.create({});
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "settings.edit"))) return fail("Unauthorized", 401);
   const body = await req.json().catch(() => null);
   if (!body) return fail("Invalid payload", 400);
 

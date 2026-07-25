@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Payment from "@/models/Payment";
 import { recalcInvoice } from "@/lib/recalcInvoice";
-import { requireAuth } from "@/lib/requireAuth";
+import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isObjectId, isPositiveNumber, isValidDateStr } from "@/lib/validators";
 import type { RouteParams } from "@/lib/types";
@@ -10,7 +10,7 @@ import type { RouteParams } from "@/lib/types";
 type Params = RouteParams;
 
 export async function PUT(req: NextRequest, { params }: Params) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "payments.edit"))) return fail("Unauthorized", 401);
   const { id } = await params;
   if (!isObjectId(id)) return fail("Invalid payment id", 400);
   const body = await req.json().catch(() => null);
@@ -40,7 +40,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "payments.delete"))) return fail("Unauthorized", 401);
   const { id } = await params;
   if (!isObjectId(id)) return fail("Invalid payment id", 400);
 

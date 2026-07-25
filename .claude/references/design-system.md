@@ -71,7 +71,7 @@ Font: **Inter** via `next/font/google` (`app/layout.tsx`, exposed as `--font-san
 | Modal | `<Modal open onClose>` → `#ov`/`#mb`, already responsive (`width:92%`, `max-height:90vh`) |
 | Form grid | `.g2` (2-col) / `.g3` (3-col) inside `.fc`, full-width field gets `.fl` |
 | Inline validation banner | `<Toast kind="ok"|"err" message="...">` — an inline banner next to the field/modal it's about. |
-| Standalone notification | `useToast().showToast(message, kind?)` (`hooks/useToast.ts`, provider in `components/Common/ToastProvider.tsx`, wrapped once at the root `app/layout.tsx`) — a floating, auto-dismissing toast (top-right). Use this for fire-and-forget feedback on an action with no adjacent form/modal (e.g. a table-row toggle) — **never** `alert()`/`confirm()`-style browser popups for messaging. `confirm()` is still fine for its existing yes/no delete-confirmation use — this only replaces `alert()`. |
+| Standalone notification | `useToast().showToast(message, kind?)` (`hooks/useToast.ts`, provider in `components/Common/ToastProvider.tsx`, wrapped once at the root `app/layout.tsx`) — a floating, auto-dismissing toast (bottom-right). Use this for fire-and-forget feedback on an action with no adjacent form/modal (e.g. a table-row toggle) — **never** `alert()`/`confirm()`-style browser popups for messaging. `confirm()` is still fine for its existing yes/no delete-confirmation use — this only replaces `alert()`. |
 | Loading state | a `Skeleton*` component from `components/Common/Skeleton.tsx` (see below) — **never** plain "Loading…" text or a spinner for a full screen/section |
 | Native `<select>` | any plain `<select>` automatically gets the themed chevron via the global `select {}` rule — don't add a UI library `Select` component |
 

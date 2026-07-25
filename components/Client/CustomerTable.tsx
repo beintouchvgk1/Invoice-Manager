@@ -10,6 +10,8 @@ export function CustomerTable({
   onAddPayment,
   onEdit,
   onDelete,
+  canEdit,
+  canDelete,
 }: {
   clients: Client[];
   invoices: Invoice[];
@@ -18,6 +20,8 @@ export function CustomerTable({
   onAddPayment: (client: Client) => void;
   onEdit: (client: Client) => void;
   onDelete: (client: Client) => void;
+  canEdit: boolean;
+  canDelete: boolean;
 }) {
   const paymentClientId = (p: Payment) => p.clientId || invoices.find((i) => i._id === p.invoiceId)?.clientId;
 
@@ -81,8 +85,8 @@ export function CustomerTable({
                       >
                         + Payment
                       </button>
-                      <button className="btn sm bp" onClick={() => onEdit(c)}>Edit</button>
-                      <button className="btn sm brd" onClick={() => onDelete(c)}>Del</button>
+                      {canEdit && <button className="btn sm bp" onClick={() => onEdit(c)}>Edit</button>}
+                      {canDelete && <button className="btn sm brd" onClick={() => onDelete(c)}>Del</button>}
                     </div>
                   </td>
                 </tr>

@@ -10,12 +10,16 @@ export function InvoiceTable({
   onDelete,
   onPrint,
   onAddPayment,
+  canEdit,
+  canDelete,
 }: {
   invoices: Invoice[];
   clients: Client[];
   onDelete: (id: string) => void;
   onPrint: (invoice: Invoice) => void;
   onAddPayment: (invoice: Invoice) => void;
+  canEdit: boolean;
+  canDelete: boolean;
 }) {
   const router = useRouter();
   const clientName = (clientId: string) => clients.find((c) => c._id === clientId)?.name || "Unknown";
@@ -50,8 +54,10 @@ export function InvoiceTable({
                   <td>
                     <div className="ac">
                       <button className="btn sm bs" onClick={() => onPrint(inv)}>PDF</button>
-                      <button className="btn sm bp" onClick={() => router.push(`/invoices/${inv._id}/edit`)}>Edit</button>
-                      {inv.paymentType !== "cash" && inv.status !== "Paid" && (
+                      {canEdit && (
+                        <button className="btn sm bp" onClick={() => router.push(`/invoices/${inv._id}/edit`)}>Edit</button>
+                      )}
+                      {canEdit && inv.paymentType !== "cash" && inv.status !== "Paid" && (
                         <button
                           className="btn sm"
                           style={{ background: "#ecfdf5", color: "#059669", fontWeight: 700 }}
@@ -60,7 +66,7 @@ export function InvoiceTable({
                           + Payment
                         </button>
                       )}
-                      <button className="btn sm brd" onClick={() => onDelete(inv._id)}>Del</button>
+                      {canDelete && <button className="btn sm brd" onClick={() => onDelete(inv._id)}>Del</button>}
                     </div>
                   </td>
                 </tr>

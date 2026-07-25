@@ -4,10 +4,13 @@ import { Header } from "@/components/Layout/Header";
 import { SkeletonFormCard } from "@/components/Common/Skeleton";
 import { Toast } from "@/components/Common/Toast";
 import { useSettings } from "@/hooks/useSettings";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { settingsService } from "@/services/settings.service";
 
 export default function SettingsPage() {
   const { settings, loading, refresh } = useSettings();
+  const { can } = useCurrentUser();
+  const canEdit = can("settings.edit");
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -109,7 +112,7 @@ export default function SettingsPage() {
             <SkeletonFormCard fields={2} />
           </>
         ) : (
-          <>
+          <fieldset disabled={!canEdit} style={{ border: "none", padding: 0, margin: 0 }}>
             <div className="fc">
               <h3>Firm Details</h3>
               <div className="g2">
@@ -187,7 +190,7 @@ export default function SettingsPage() {
 
             <div>{toast && <Toast kind="ok" message={toast} />}</div>
             <button className="btn bp" disabled={busy} onClick={handleSave}>Save Settings</button>
-          </>
+          </fieldset>
         )}
       </div>
     </>

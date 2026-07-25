@@ -9,6 +9,7 @@ import { PaymentModal } from "@/components/Payment/PaymentModal";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useInvoices } from "@/hooks/useInvoices";
 import { usePayments } from "@/hooks/usePayments";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { customerService } from "@/services/customer.service";
 import type { Client } from "@/lib/types";
 
@@ -17,6 +18,7 @@ export default function CustomersPage() {
   const { customers, loading, refresh } = useCustomers();
   const { invoices, refresh: refreshInvoices } = useInvoices();
   const { payments, refresh: refreshPayments } = usePayments();
+  const { can } = useCurrentUser();
   const [editing, setEditing] = useState<Client | null | undefined>(undefined);
   const [payingFor, setPayingFor] = useState<Client | null>(null);
 
@@ -30,7 +32,7 @@ export default function CustomersPage() {
     <>
       <Header
         title="Clients"
-        actions={<button className="btn bp sm" onClick={() => setEditing(null)}>+ New Client</button>}
+        actions={can("customers.create") && <button className="btn bp sm" onClick={() => setEditing(null)}>+ New Client</button>}
       />
       <div id="ct">
         {loading ? (
@@ -44,6 +46,8 @@ export default function CustomersPage() {
             onAddPayment={setPayingFor}
             onEdit={setEditing}
             onDelete={handleDelete}
+            canEdit={can("customers.edit")}
+            canDelete={can("customers.delete")}
           />
         )}
       </div>

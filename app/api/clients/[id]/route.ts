@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Client from "@/models/Client";
-import { requireAuth } from "@/lib/requireAuth";
+import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isNonEmptyString, isObjectId } from "@/lib/validators";
 import type { RouteParams } from "@/lib/types";
@@ -9,7 +9,7 @@ import type { RouteParams } from "@/lib/types";
 type Params = RouteParams;
 
 export async function PUT(req: NextRequest, { params }: Params) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "customers.edit"))) return fail("Unauthorized", 401);
   const { id } = await params;
   if (!isObjectId(id)) return fail("Invalid client id", 400);
   const body = await req.json().catch(() => null);
@@ -36,7 +36,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "customers.delete"))) return fail("Unauthorized", 401);
   const { id } = await params;
   if (!isObjectId(id)) return fail("Invalid client id", 400);
 

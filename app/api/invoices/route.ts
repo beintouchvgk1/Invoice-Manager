@@ -3,13 +3,13 @@ import { connectDB } from "@/lib/mongodb";
 import Invoice from "@/models/Invoice";
 import Payment from "@/models/Payment";
 import Settings from "@/models/Settings";
-import { requireAuth } from "@/lib/requireAuth";
+import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isObjectId, isValidDateStr, validateInvoiceItems } from "@/lib/validators";
 import { formatInvoiceNo, formatReceiptNo } from "@/lib/invoiceNumber";
 
 export async function GET(req: NextRequest) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "invoices.view"))) return fail("Unauthorized", 401);
   await connectDB();
   const clientId = req.nextUrl.searchParams.get("clientId");
   const filter = clientId && isObjectId(clientId) ? { clientId } : {};
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "invoices.create"))) return fail("Unauthorized", 401);
   const body = await req.json().catch(() => null);
   if (!body || !isObjectId(body.clientId)) return fail("Client is required", 400);
   if (!isValidDateStr(body.date)) return fail("Invoice date is required", 400);

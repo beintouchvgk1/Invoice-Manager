@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Client from "@/models/Client";
-import { requireAuth } from "@/lib/requireAuth";
+import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isNonEmptyString } from "@/lib/validators";
 
 export async function GET(req: NextRequest) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "customers.view"))) return fail("Unauthorized", 401);
   await connectDB();
   const group = req.nextUrl.searchParams.get("group");
   const filter = group ? { groupName: group } : {};
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!requireAuth(req)) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "customers.create"))) return fail("Unauthorized", 401);
   const body = await req.json().catch(() => null);
   if (!body || !isNonEmptyString(body.name)) return fail("Client name is required", 400);
 
