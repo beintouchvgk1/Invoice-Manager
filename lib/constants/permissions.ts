@@ -64,6 +64,11 @@ export const PERMISSION_MODULES = [
     ],
   },
   {
+    key: "backup",
+    label: "Database Backup",
+    actions: [{ key: "export", label: "Download Database Backup" }],
+  },
+  {
     key: "roles",
     label: "Roles & Permissions",
     actions: [
@@ -100,6 +105,7 @@ export function isValidPermission(key: string): boolean {
 // (see app/api/roles/**, app/api/users/** — both use requirePermission()). The one
 // exception is assigning the super_admin ROLE itself to a user: that always
 // requires the caller to actually hold the super_admin role, regardless of
-// whether they hold users.create/users.edit — see requireSuperAdminRoleAssignment
-// in lib/requireAuth.ts. That's the one privilege-escalation path a granted
-// users.edit permission can't open on its own.
+// whether they hold users.create/users.edit — see the extra requireSuperAdmin()
+// checks inside app/api/users/route.ts and app/api/users/[id]/route.ts. That's
+// the one privilege-escalation path a granted users.edit permission can't open
+// on its own.

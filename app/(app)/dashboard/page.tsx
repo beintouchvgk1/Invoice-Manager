@@ -7,15 +7,33 @@ import { StatusBadge } from "@/components/Common/Badge";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useInvoices } from "@/hooks/useInvoices";
 import { usePayments } from "@/hooks/usePayments";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useToast } from "@/hooks/useToast";
 import { fI, fD, ageD, ost } from "@/lib/calc";
 import { PaymentModal } from "@/components/Payment/PaymentModal";
+import { backupService } from "@/services/backup.service";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { customers } = useCustomers();
   const { invoices, loading, refresh: refreshInvoices } = useInvoices();
   const { payments, refresh: refreshPayments } = usePayments();
+  const { can } = useCurrentUser();
+  const { showToast } = useToast();
   const [payFor, setPayFor] = useState<string | null>(null);
+  const [backingUp, setBackingUp] = useState(false);
+
+  async function handleBackup() {
+    setBackingUp(true);
+    try {
+      await backupService.download();
+      showToast("Backup downloaded — store this file somewhere secure.", "ok");
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Failed to download backup");
+    } finally {
+      setBackingUp(false);
+    }
+  }
 
   const clientName = useMemo(() => {
     const map = new Map(customers.map((c) => [c._id, c.name]));
@@ -43,7 +61,16 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Header title="Dashboard" />
+      <Header
+        title="Dashboard"
+        actions={
+          can("backup.export") && (
+            <button className="btn bg sm" disabled={backingUp} onClick={handleBackup}>
+              {backingUp ? "Preparing backup..." : "Download Backup"}
+            </button>
+          )
+        }
+      />
       <div id="ct">
         {loading ? (
           <>

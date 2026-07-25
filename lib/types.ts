@@ -35,6 +35,21 @@ export type PermissionAction = PermissionModule["actions"][number];
 // --- hooks/useCurrentUser.ts ---
 export type CurrentUser = { email: string | null; role: string | null; permissions: string[]; loading: boolean };
 
+// --- app/api/backup/route.ts ---
+// A full, application-level export of every collection — used for the "Download
+// Database Backup" feature. Deliberately plain JSON (not a mongodump/BSON archive):
+// the app runs on Vercel serverless functions, which can't shell out to the
+// mongodump binary or write to a persistent filesystem, so an in-process
+// Mongoose export is the only approach that actually works in production.
+// Each collection is the raw `.lean()` result (includes `_id`/timestamps/`__v`),
+// so this stays a loose record shape rather than the stricter `*Doc` types in
+// models/types.ts (which describe the pre-persistence schema shape, not what
+// comes back off the wire).
+export type DatabaseBackupPayload = {
+  meta: { exportedAt: string; app: string; version: number };
+  collections: Record<"clients" | "groups" | "invoices" | "payments" | "roles" | "users" | "settings", Record<string, unknown>[]>;
+};
+
 // --- lib/calc.ts ---
 export type InvoiceLike = { total?: number; paidAmount?: number };
 

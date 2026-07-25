@@ -50,6 +50,21 @@ an existing super admin row, unless the viewer actually is one — so it never h
 Nothing else about roles/users is specially restricted; a role with `roles.edit`, for instance, can
 freely edit any other custom role's permissions (including its own), same as any other module.
 
+## Database backup (`/api/backup`, gated by `can("backup.export")`)
+`app/api/backup/route.ts` streams a full JSON export of every collection (Client/Group/Invoice/Payment/
+Role/User/Settings) as a downloadable file — triggered from the "Download Backup" button in the
+Dashboard header (`app/(app)/dashboard/page.tsx`). It's a plain in-process Mongoose export, **not** a
+`mongodump`/BSON archive: the app runs on Vercel serverless functions, which can't shell out to the
+`mongodump` binary or write to a persistent filesystem, so this is the only approach that actually works
+in production. `lib/backup.ts`'s `buildBackupFilename()` names the file
+`invoice_manager_db_backup_DD-MM-YYYY-HHMMSS.json`. The export includes `User.password` (bcrypt hashes)
+deliberately — a backup that can't restore working logins isn't a real backup — so treat a downloaded
+file as sensitive, same as any other credential. `services/backup.service.ts` doesn't go through
+`services/http.ts` (that wrapper assumes a `{success,data}` JSON envelope; a successful response here is
+the raw file, not an envelope) — it fetches, checks `res.ok`, and turns the blob into a browser download
+directly. Don't route a future file-download endpoint through `http.ts` either; follow this pattern
+instead.
+
 ## Adding a new page — checklist
 1. Create `app/(app)/{route}/page.tsx` (or a new top-level group if it shouldn't share the sidebar).
 2. Build the feature's own hook in `hooks/use{Name}.ts` (see `rules/data-pattern.md`) and service in

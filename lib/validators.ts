@@ -6,6 +6,13 @@ export function isValidEmail(v: unknown): v is string {
   return typeof v === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
 
+// Digits with an optional single leading "+" — no spaces/dashes/letters. Phone is
+// always an optional field, so an empty string is a separate "not provided" case
+// callers should check for themselves rather than treating as valid/invalid here.
+export function isValidPhone(v: unknown): v is string {
+  return typeof v === "string" && /^\+?\d+$/.test(v.trim());
+}
+
 export function isValidDateStr(v: unknown): v is string {
   return typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 }

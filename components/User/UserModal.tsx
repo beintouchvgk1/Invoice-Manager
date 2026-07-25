@@ -3,7 +3,17 @@ import { useState } from "react";
 import { Modal } from "@/components/Common/Modal";
 import { Toast } from "@/components/Common/Toast";
 import { userService } from "@/services/user.service";
+import { isValidEmail, isValidPhone } from "@/lib/validators";
 import type { Role, User } from "@/lib/types";
+
+// Blocks anything but digits and a single leading "+" as the user types/pastes,
+// rather than only flagging it after the fact on submit — the field never even
+// shows garbage characters to correct.
+function sanitizePhoneInput(value: string): string {
+  const hasLeadingPlus = value.trim().startsWith("+");
+  const digits = value.replace(/\D/g, "");
+  return (hasLeadingPlus ? "+" : "") + digits;
+}
 
 export function UserModal({
   user,
@@ -26,6 +36,8 @@ export function UserModal({
   async function handleSave() {
     setError("");
     if (!email.trim()) return setError("Email is required");
+    if (!isValidEmail(email)) return setError("Enter a valid email address");
+    if (phone.trim() && !isValidPhone(phone)) return setError("Phone number can only contain digits and a leading +");
     if (!roleId) return setError("Role is required");
     if (!user && !password) return setError("Password is required");
     if (password && password.length < 6) return setError("Password must be at least 6 characters");
@@ -61,7 +73,12 @@ export function UserModal({
         </div>
         <div className="fg">
           <label>Phone Number</label>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <input
+            type="tel"
+            inputMode="tel"
+            value={phone}
+            onChange={(e) => setPhone(sanitizePhoneInput(e.target.value))}
+          />
         </div>
         <div className="fg">
           <label>{user ? "New Password (leave blank to keep current)" : "Password *"}</label>
