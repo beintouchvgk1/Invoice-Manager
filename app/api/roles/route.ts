@@ -1,20 +1,20 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Role from "@/models/Role";
-import { requireSuperAdmin } from "@/lib/requireAuth";
+import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isNonEmptyString } from "@/lib/validators";
-import { isAssignablePermission } from "@/lib/constants";
+import { isValidPermission } from "@/lib/constants";
 
 export async function GET(req: NextRequest) {
-  if (!(await requireSuperAdmin(req))) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "roles.view"))) return fail("Unauthorized", 401);
   await connectDB();
   const roles = await Role.find().sort({ name: 1 }).lean();
   return ok(roles);
 }
 
 export async function POST(req: NextRequest) {
-  if (!(await requireSuperAdmin(req))) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "roles.create"))) return fail("Unauthorized", 401);
   const body = await req.json().catch(() => null);
   if (!body || !isNonEmptyString(body.name)) return fail("Role name is required", 400);
 
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const existing = await Role.findOne({ name });
   if (existing) return fail("A role with this name already exists", 409);
 
-  const permissions = Array.isArray(body.permissions) ? body.permissions.filter(isAssignablePermission) : [];
+  const permissions = Array.isArray(body.permissions) ? body.permissions.filter(isValidPermission) : [];
 
   const role = await Role.create({
     name,

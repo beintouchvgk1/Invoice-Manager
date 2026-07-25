@@ -6,7 +6,7 @@ import { RoleModal } from "@/components/Role/RoleModal";
 import { useRoles } from "@/hooks/useRoles";
 import { roleService } from "@/services/role.service";
 import { useToast } from "@/hooks/useToast";
-import { ROLES, PERMISSION_MODULES, ALL_PERMISSIONS, ASSIGNABLE_PERMISSIONS } from "@/lib/constants";
+import { ROLES, PERMISSION_MODULES, ALL_PERMISSIONS } from "@/lib/constants";
 import type { Role } from "@/lib/types";
 
 const MODULE_ICONS: Record<string, string> = {
@@ -54,8 +54,8 @@ function permissionCount(role: Role): number {
   return role.name === ROLES.SUPER_ADMIN ? ALL_PERMISSIONS.length : role.permissions.length;
 }
 
-function permissionTotal(role: Role): number {
-  return role.name === ROLES.SUPER_ADMIN ? ALL_PERMISSIONS.length : ASSIGNABLE_PERMISSIONS.length;
+function permissionTotal(): number {
+  return ALL_PERMISSIONS.length;
 }
 
 function sameSet(a: string[], b: string[]): boolean {
@@ -93,19 +93,15 @@ export default function RolesPage() {
   const isDirty = !isSuperAdminRole && !!selectedRole && !sameSet(draftPermissions, selectedRole.permissions);
 
   const filteredModules = useMemo(() => {
-    // "roles" and "users" stay hard-gated to the super admin (see lib/requireAuth.ts) —
-    // showing them as assignable toggles on any other role would be misleading,
-    // since the underlying API would still reject that role's requests.
-    const modules = isSuperAdminRole ? PERMISSION_MODULES : PERMISSION_MODULES.filter((m) => m.key !== "roles" && m.key !== "users");
     const q = search.trim().toLowerCase();
-    if (!q) return modules;
-    return modules
+    if (!q) return PERMISSION_MODULES;
+    return PERMISSION_MODULES
       .map((m) => ({
         ...m,
         actions: m.actions.filter((a) => a.label.toLowerCase().includes(q) || m.label.toLowerCase().includes(q)),
       }))
       .filter((m) => m.actions.length);
-  }, [search, isSuperAdminRole]);
+  }, [search]);
 
   async function toggleActive(role: Role) {
     setBusyRoleId(role._id);
@@ -150,7 +146,7 @@ export default function RolesPage() {
   }
 
   const grantedCount = selectedRole ? (isSuperAdminRole ? permissionCount(selectedRole) : draftPermissions.length) : 0;
-  const grantedTotal = selectedRole ? permissionTotal(selectedRole) : 0;
+  const grantedTotal = selectedRole ? permissionTotal() : 0;
   const grantedPct = grantedTotal ? Math.round((grantedCount / grantedTotal) * 100) : 0;
 
   return (
@@ -192,7 +188,7 @@ export default function RolesPage() {
               <div className="perm-role-list">
                 {roles.length ? (
                   roles.map((r) => {
-                    const pct = Math.round((permissionCount(r) / permissionTotal(r)) * 100) || 0;
+                    const pct = Math.round((permissionCount(r) / permissionTotal()) * 100) || 0;
                     return (
                       <button
                         key={r._id}

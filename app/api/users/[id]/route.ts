@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 import Role from "@/models/Role";
-import { requireSuperAdmin } from "@/lib/requireAuth";
+import { requirePermission, requireSuperAdmin } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isNonEmptyString, isValidEmail, isObjectId } from "@/lib/validators";
 import { hashPassword } from "@/lib/bcrypt";
@@ -26,7 +26,7 @@ async function wouldRemoveLastActiveSuperAdmin(userId: string, becomingInactiveO
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
-  if (!(await requireSuperAdmin(req))) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "users.edit"))) return fail("Unauthorized", 401);
   const { id } = await params;
   const body = await req.json().catch(() => null);
   if (!body) return fail("Invalid request body", 400);
@@ -36,6 +36,14 @@ export async function PUT(req: NextRequest, { params }: Params) {
   if (!user) return fail("User not found", 404);
   const currentRoleName = (user.roleId as unknown as { name: string } | null)?.name;
   const isCurrentlySuperAdmin = currentRoleName === ROLES.SUPER_ADMIN;
+
+  // A delegated users.edit permission can manage ordinary accounts, but touching an
+  // existing super admin account (even just its email/phone/password) requires
+  // actually being a super admin — otherwise users.edit alone could disable or lock
+  // out the real admins.
+  if (isCurrentlySuperAdmin && !(await requireSuperAdmin(req))) {
+    return fail("Only a super admin can modify a super admin account", 403);
+  }
 
   if (isNonEmptyString(body.email)) {
     if (!isValidEmail(body.email)) return fail("A valid email is required", 400);
@@ -57,6 +65,13 @@ export async function PUT(req: NextRequest, { params }: Params) {
   if (isNonEmptyString(body.roleId) && isObjectId(body.roleId) && body.roleId !== String(user.roleId)) {
     const newRole = await Role.findById(body.roleId);
     if (!newRole) return fail("Selected role does not exist", 400);
+
+    // Promoting a user to super_admin is the one action a delegated users.edit
+    // permission can't perform on its own — same reasoning as user creation above.
+    if (newRole.name === ROLES.SUPER_ADMIN && !isCurrentlySuperAdmin && !(await requireSuperAdmin(req))) {
+      return fail("Only a super admin can promote a user to super admin", 403);
+    }
+
     const movingAwayFromSuperAdmin = isCurrentlySuperAdmin && newRole.name !== ROLES.SUPER_ADMIN;
     if (await wouldRemoveLastActiveSuperAdmin(id, movingAwayFromSuperAdmin)) {
       return fail("Cannot reassign the last active super admin away from that role", 400);
@@ -77,13 +92,17 @@ export async function PUT(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
-  if (!(await requireSuperAdmin(req))) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "users.delete"))) return fail("Unauthorized", 401);
   const { id } = await params;
 
   await connectDB();
   const user = await User.findById(id).populate<{ roleId: { name: string } }>("roleId");
   if (!user) return fail("User not found", 404);
   const isSuperAdmin = (user.roleId as unknown as { name: string } | null)?.name === ROLES.SUPER_ADMIN;
+
+  if (isSuperAdmin && !(await requireSuperAdmin(req))) {
+    return fail("Only a super admin can delete a super admin account", 403);
+  }
 
   if (await wouldRemoveLastActiveSuperAdmin(id, isSuperAdmin && user.isActive)) {
     return fail("Cannot delete the last active super admin", 400);

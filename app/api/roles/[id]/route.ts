@@ -2,16 +2,16 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Role from "@/models/Role";
 import User from "@/models/User";
-import { requireSuperAdmin } from "@/lib/requireAuth";
+import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isNonEmptyString } from "@/lib/validators";
-import { ROLES, isAssignablePermission } from "@/lib/constants";
+import { ROLES, isValidPermission } from "@/lib/constants";
 import type { RouteParams } from "@/lib/types";
 
 type Params = RouteParams;
 
 export async function PUT(req: NextRequest, { params }: Params) {
-  if (!(await requireSuperAdmin(req))) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "roles.edit"))) return fail("Unauthorized", 401);
   const { id } = await params;
   const body = await req.json().catch(() => null);
   if (!body) return fail("Invalid request body", 400);
@@ -42,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       // to edit it rather than erroring, since the UI renders its checkboxes
       // disabled anyway.
     } else {
-      role.permissions = body.permissions.filter(isAssignablePermission);
+      role.permissions = body.permissions.filter(isValidPermission);
     }
   }
 
@@ -51,7 +51,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
-  if (!(await requireSuperAdmin(req))) return fail("Unauthorized", 401);
+  if (!(await requirePermission(req, "roles.delete"))) return fail("Unauthorized", 401);
   const { id } = await params;
 
   await connectDB();

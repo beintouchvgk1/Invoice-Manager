@@ -46,14 +46,14 @@ assuming otherwise.
    grep every caller and confirm the change doesn't alter behavior for any of them — else add a new
    function/component instead. (`rules/code-standards.md`)
 7. **Auth is `User` + `Role` based, login by email** — no public self-registration/self-service
-   password reset (accounts are created by a super admin via the Users tab). Roles carry a granular
-   `permissions: string[]` (view/create/edit/delete per module, catalog in
-   `lib/constants/permissions.ts`, edited on `/roles`), checked fresh from the DB via
-   `requirePermission(req, "module.action")`. `/roles` and `/users` themselves stay super_admin-only
-   (`requireSuperAdmin()`) — not permission-assignable — since granting `roles.edit`/`users.edit` to a
-   custom role would let it self-escalate. Gate a new admin-only screen the same double way: hide the
-   nav item client-side (`useCurrentUser().can(...)`) AND re-check server-side, never one without
-   the other.
+   password reset. Roles carry a granular `permissions: string[]` (view/create/edit/delete per module —
+   including `roles` and `users` themselves — catalog in `lib/constants/permissions.ts`, edited on
+   `/roles`), checked fresh from the DB via `requirePermission(req, "module.action")`, including on
+   `/api/roles/**` and `/api/users/**`. The one narrower exception: creating/promoting/editing/deleting
+   a **`super_admin` account** additionally requires `requireSuperAdmin()` — so a delegated
+   `users.create`/`users.edit` permission can't mint or hijack its way into a super admin account (see
+   `references/routes.md`). Gate a new admin-only screen the same double way: hide the nav item
+   client-side (`useCurrentUser().can(...)`) AND re-check server-side, never one without the other.
 8. **No inline types** — every `type`/`interface` lives in `lib/types.ts` (or `models/types.ts` for
    Mongoose `*Doc` types), never declared inside a component/route/schema file. (`rules/types.md`)
 

@@ -27,11 +27,13 @@ modifying one:
   email. Roles carry a granular `permissions: string[]` (catalog in `lib/constants/permissions.ts`),
   checked fresh from the DB per-request via `requirePermission(req, "module.action")` (a `super_admin`
   always passes). Gate a new feature route/nav item the same double way: hide the nav item client-side
-  (`useCurrentUser().can(...)`) AND re-check server-side, never one without the other. `/roles` +
-  `/users` are the one exception — stay hard-gated to `super_admin` via `requireSuperAdmin()`, not
-  permission-assignable, since granting that access to a custom role would let it self-escalate. There
-  is still no public self-registration or self-service password-reset — accounts are created by a
-  super admin via the Users tab, not signed up by the end user.
+  (`useCurrentUser().can(...)`) AND re-check server-side, never one without the other. `roles`/`users`
+  are ordinary assignable modules too (`/api/roles/**`, `/api/users/**` use `requirePermission()` like
+  everything else) — the one narrower exception is that creating/promoting/editing/deleting a
+  **`super_admin` account specifically** additionally requires `requireSuperAdmin()`, so a delegated
+  `users.create`/`users.edit` permission can't be used to mint or hijack a super admin account (see
+  `references/routes.md`). There is still no public self-registration or self-service password-reset —
+  accounts are created by an authorized user via the Users tab, not signed up by the end user.
 - **No static role/status/mode strings** — anything enum-like (role names, permission keys, cookie
   name, token TTL) lives in `lib/constants/` and is imported, never re-typed as a literal string in a
   second file.

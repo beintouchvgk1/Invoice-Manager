@@ -16,8 +16,8 @@ and has no sidebar/header.
 | `/reports` | `(app)/reports/page.tsx` | `useCustomers` + `useInvoices` + `usePayments`, 4 tabs (Outstanding / Received / Ageing / Group-wise) |
 | `/settings` | `(app)/settings/page.tsx` | `useSettings` |
 | `/ledger/[clientId]` | `(app)/ledger/[clientId]/page.tsx` | `useCustomers` + `useInvoices` + `usePayments`, filtered to one client |
-| `/roles` | `(app)/roles/page.tsx` | `useRoles` — **super_admin only**, nav item hidden otherwise |
-| `/users` | `(app)/users/page.tsx` | `useUsers` + `useRoles` — **super_admin only**, nav item hidden otherwise |
+| `/roles` | `(app)/roles/page.tsx` | `useRoles` — gated by `can("roles.view")`, nav item hidden otherwise |
+| `/users` | `(app)/users/page.tsx` | `useUsers` + `useRoles` — gated by `can("users.view")`, nav item hidden otherwise |
 | `/login` | `login/page.tsx` | `authService.login` (email + password, not username) |
 
 ## Auth, roles & permissions
@@ -27,25 +27,28 @@ Role names are user-manageable via the `/roles` screen; only the seeded `super_a
 `lib/constants/roles.ts`, never a raw string) is protected from rename/delete/deactivation.
 
 **Granular per-tab permissions** (view/create/edit/delete per module — dashboard, invoices, customers,
-groups, payments, reports, settings, roles, users) live in `lib/constants/permissions.ts`
-(`PERMISSION_MODULES`/`ALL_PERMISSIONS`/`ASSIGNABLE_PERMISSIONS`) and are edited on the `/roles` page's
-permission grid (`app/(app)/roles/page.tsx`). Every feature API route re-checks a specific permission
-**fresh from the database** via `requirePermission(req, "module.action")` in `lib/requireAuth.ts` — a
-`super_admin` always passes regardless of its stored `permissions` array (see
+groups, payments, reports, settings, **and also roles, users**) live in `lib/constants/permissions.ts`
+(`PERMISSION_MODULES`/`ALL_PERMISSIONS`) and are edited on the `/roles` page's permission grid
+(`app/(app)/roles/page.tsx`) — every module, including `roles` and `users`, is assignable to any custom
+role. Every feature API route, **including `/api/roles/**` and `/api/users/**`**, re-checks a specific
+permission **fresh from the database** via `requirePermission(req, "module.action")` in
+`lib/requireAuth.ts` — a `super_admin` always passes regardless of its stored `permissions` array (see
 `lib/permissionSeeder.ts`, which runs on server boot via `instrumentation.ts` and keeps that role synced
 to every permission that exists). Client-side, `useCurrentUser()` exposes `can(permission)` — used by
 `Sidebar.tsx` to filter nav items and by each feature page to hide Create/Edit/Delete controls; this is
 cosmetic only, the API route is the real gate.
 
-**`roles` and `users` module permissions are not actually assignable** to any role other than
-`super_admin` — `/api/roles/**` and `/api/users/**` stay hard-gated to `ROLES.SUPER_ADMIN` via
-`requireSuperAdmin()` (not `requirePermission()`), to prevent a custom role from granting itself
-admin-management access. `ASSIGNABLE_PERMISSIONS` (everything except `roles.*`/`users.*`) is what the
-API actually persists onto a non-super-admin role, and the permission grid hides those two modules for
-every role except `super_admin`. `/roles` and `/users` nav items are still driven by `can("roles.view")`
-/`can("users.view")` — which, given the above, can only ever be true for `super_admin` — so don't
-"fix" this by hardcoding a `role === ROLES.SUPER_ADMIN` nav check instead; the permission-based check
-is intentional and already correct.
+**One narrower exception remains, independent of the permission system**: only an actual `super_admin`
+(via `requireSuperAdmin()`, checked *in addition to* `requirePermission`) can create a user with the
+`super_admin` role, promote an existing user into it, or modify/delete/deactivate an account that
+already holds it — see the extra `requireSuperAdmin(req)` checks inside
+`app/api/users/route.ts`/`app/api/users/[id]/route.ts`. This is the one privilege-escalation path a
+delegated `users.create`/`users.edit` permission can't open on its own: without it, a role holding
+those permissions could mint or edit its own way into a super admin account. `app/(app)/users/page.tsx`
+mirrors this client-side — it filters `super_admin` out of the role picker, and hides Edit/Deactivate on
+an existing super admin row, unless the viewer actually is one — so it never hits a surprise 403.
+Nothing else about roles/users is specially restricted; a role with `roles.edit`, for instance, can
+freely edit any other custom role's permissions (including its own), same as any other module.
 
 ## Adding a new page — checklist
 1. Create `app/(app)/{route}/page.tsx` (or a new top-level group if it shouldn't share the sidebar).

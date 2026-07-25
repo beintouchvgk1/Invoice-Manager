@@ -95,18 +95,11 @@ export function isValidPermission(key: string): boolean {
   return ALL_PERMISSIONS_SET.has(key);
 }
 
-// "roles" and "users" module permissions are not actually assignable to any role
-// other than the super admin: app/api/roles/**/api/users/** stay hard-gated to
-// ROLES.SUPER_ADMIN (see lib/requireAuth.ts's requireSuperAdmin) to prevent a
-// custom role from granting itself admin-management access. Checking these boxes
-// for a non-super-admin role would be a permission that does nothing, so they're
-// filtered out of both the assignable grid and any non-super-admin role's stored
-// permissions array.
-export const ASSIGNABLE_PERMISSIONS: string[] = ALL_PERMISSIONS.filter(
-  (p) => !p.startsWith("roles.") && !p.startsWith("users.")
-);
-const ASSIGNABLE_PERMISSIONS_SET = new Set(ASSIGNABLE_PERMISSIONS);
-
-export function isAssignablePermission(key: string): boolean {
-  return ASSIGNABLE_PERMISSIONS_SET.has(key);
-}
+// "roles" and "users" are ordinary assignable modules like any other — a custom
+// role can be granted roles.*/users.* the same way it's granted invoices.* etc.
+// (see app/api/roles/**, app/api/users/** — both use requirePermission()). The one
+// exception is assigning the super_admin ROLE itself to a user: that always
+// requires the caller to actually hold the super_admin role, regardless of
+// whether they hold users.create/users.edit — see requireSuperAdminRoleAssignment
+// in lib/requireAuth.ts. That's the one privilege-escalation path a granted
+// users.edit permission can't open on its own.
