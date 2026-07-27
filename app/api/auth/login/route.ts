@@ -18,10 +18,21 @@ export async function POST(req: NextRequest) {
   const user = await User.findOne({ email: body.email.trim().toLowerCase() }).populate<{
     roleId: { name: string; isActive: boolean };
   }>("roleId");
-  if (!user || !user.isActive) return fail("Invalid email or password", 401);
+  if (!user) return fail("Invalid email or password", 401);
+
+  // Deliberately more specific than "Invalid email or password" once we know the
+  // account exists — the account-status/role-status reasons aren't secrets (an
+  // admin can already see them on the Users/Roles screens), and telling the user
+  // exactly what to ask their admin for saves a support round-trip. Only "no such
+  // user" and "wrong password" stay merged into the generic message, so login
+  // still doesn't reveal whether an email is registered.
+  if (!user.isActive) return fail("Your account has been deactivated by the admin. Please contact your admin.", 401);
 
   const role = user.roleId as unknown as { name: string; isActive: boolean } | null;
-  if (!role || !role.isActive) return fail("Invalid email or password", 401);
+  if (!role || !role.isActive) {
+    const roleName = role?.name || "assigned";
+    return fail(`Your "${roleName}" role has been deactivated by the admin. Please contact your admin to activate it.`, 401);
+  }
 
   const valid = await comparePassword(body.password, user.password);
   if (!valid) return fail("Invalid email or password", 401);
