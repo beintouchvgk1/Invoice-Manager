@@ -11,6 +11,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useToast } from "@/hooks/useToast";
 import { fI, fD, ageD, ost } from "@/lib/calc";
 import { PaymentModal } from "@/components/Payment/PaymentModal";
+import { ConfirmModal } from "@/components/Common/ConfirmModal";
 import { backupService } from "@/services/backup.service";
 
 const STAT_ICONS = {
@@ -37,8 +38,9 @@ export default function DashboardPage() {
   const { showToast } = useToast();
   const [payFor, setPayFor] = useState<string | null>(null);
   const [backingUp, setBackingUp] = useState(false);
+  const [showBackupConfirm, setShowBackupConfirm] = useState(false);
 
-  async function handleBackup() {
+  async function confirmBackup() {
     setBackingUp(true);
     try {
       await backupService.download();
@@ -47,6 +49,7 @@ export default function DashboardPage() {
       showToast(err instanceof Error ? err.message : "Failed to download backup");
     } finally {
       setBackingUp(false);
+      setShowBackupConfirm(false);
     }
   }
 
@@ -80,7 +83,7 @@ export default function DashboardPage() {
         title="Dashboard"
         actions={
           can("backup.export") && (
-            <button className="btn bg sm" disabled={backingUp} onClick={handleBackup}>
+            <button className="btn bg sm" disabled={backingUp} onClick={() => setShowBackupConfirm(true)}>
               {backingUp ? "Preparing backup..." : "Download Backup"}
             </button>
           )
@@ -211,6 +214,16 @@ export default function DashboardPage() {
           }}
         />
       )}
+
+      <ConfirmModal
+        open={showBackupConfirm}
+        title="Download Database Backup"
+        message="Are you sure you want to download a full database backup? The file will contain sensitive data — store it somewhere secure."
+        confirmLabel="Download"
+        busy={backingUp}
+        onConfirm={confirmBackup}
+        onCancel={() => setShowBackupConfirm(false)}
+      />
     </>
   );
 }

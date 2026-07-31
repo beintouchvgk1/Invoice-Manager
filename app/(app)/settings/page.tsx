@@ -5,11 +5,15 @@ import { SkeletonFormCard } from "@/components/Common/Skeleton";
 import { Toast } from "@/components/Common/Toast";
 import { useSettings } from "@/hooks/useSettings";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { settingsService } from "@/services/settings.service";
+import { offlineUpdateSettings } from "@/lib/offline/mutate";
+import { isValidEmail, isValidPhone } from "@/lib/validators";
 
 export default function SettingsPage() {
   const { settings, loading, refresh } = useSettings();
   const { can } = useCurrentUser();
+  const online = useOnlineStatus();
   const canEdit = can("settings.edit");
 
   const [name, setName] = useState("");
@@ -32,6 +36,7 @@ export default function SettingsPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState("");
   const [toast, setToast] = useState("");
+  const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -71,26 +76,47 @@ export default function SettingsPage() {
   async function addCategory() {
     const v = newCategory.trim();
     if (!v) return;
+    // Bg_19: category names were only compared client-side after the fact — two
+    // entries differing only by case ("GST" / "gst") used to both get created.
+    if (categories.some((c) => c.toLowerCase() === v.toLowerCase())) {
+      setError(`"${v}" already exists as a category`);
+      return;
+    }
     const updated = [...categories, v];
     setCategories(updated);
     setNewCategory("");
-    await settingsService.update({ categories: updated });
+    await offlineUpdateSettings(settingsService, { categories: updated });
   }
 
   async function deleteCategory(i: number) {
     const updated = categories.filter((_, idx) => idx !== i);
     setCategories(updated);
-    await settingsService.update({ categories: updated });
+    await offlineUpdateSettings(settingsService, { categories: updated });
   }
 
   async function handleSave() {
+    setError("");
+    // Bg_18: the form used to accept anything (blank firm name, garbage email/mobile/
+    // account number) with no feedback until the invoice PDF quietly showed the mess.
+    if (!name.trim()) return setError("Firm name is required");
+    if (email.trim() && !isValidEmail(email)) return setError("Enter a valid firm email address");
+    if (mobile.trim() && !isValidPhone(mobile)) return setError("Firm mobile number can only contain digits and a leading +");
+    if (accountNumber.trim() && !/^\d+$/.test(accountNumber.trim())) return setError("Account number can only contain digits");
+    if (ifscCode.trim() && !/^[A-Za-z]{4}0[A-Z0-9a-z]{6}$/.test(ifscCode.trim())) return setError("Enter a valid IFSC code (e.g. HDFC0001234)");
+    if (!prefix.trim()) return setError("Invoice prefix is required");
+
     setBusy(true);
     try {
-      await settingsService.update({
+      await offlineUpdateSettings(settingsService, {
         firmDetails: { name, email, address, city, pincode, mobile, termsAndConditions },
         bankAccount: { bankName, accountName, accountNumber, ifscCode, branch, upiId },
         signature,
-        invoiceNumbering: { prefix: prefix.toUpperCase(), financialYear, nextInvoiceCounter, nextReceiptCounter: settings?.invoiceNumbering.nextReceiptCounter ?? 1 },
+        // invoiceNumbering is read-only while offline (see the nested fieldset
+        // below) — the atomic counter it holds is the one thing that can never
+        // be safely edited from a stale offline snapshot.
+        ...(online
+          ? { invoiceNumbering: { prefix: prefix.toUpperCase(), financialYear, nextInvoiceCounter, nextReceiptCounter: settings?.invoiceNumbering.nextReceiptCounter ?? 1 } }
+          : {}),
         categories,
       });
       await refresh();
@@ -179,15 +205,23 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            <div className="fc">
-              <h3>Invoice Numbering</h3>
-              <div className="g3">
-                <div className="fg"><label>Prefix</label><input value={prefix} onChange={(e) => setPrefix(e.target.value)} /></div>
-                <div className="fg"><label>Financial Year</label><input value={financialYear} onChange={(e) => setFinancialYear(e.target.value)} /></div>
-                <div className="fg"><label>Next Invoice Counter</label><input type="number" min="1" value={nextInvoiceCounter} onChange={(e) => setNextInvoiceCounter(parseInt(e.target.value) || 1)} /></div>
+            <fieldset disabled={!online} style={{ border: "none", padding: 0, margin: 0 }}>
+              <div className="fc">
+                <h3>Invoice Numbering</h3>
+                {!online && (
+                  <p style={{ fontSize: 11.5, color: "var(--text-muted)", marginBottom: 10 }}>
+                    Read-only while offline — this controls the invoice number counter, which can only be changed live.
+                  </p>
+                )}
+                <div className="g3">
+                  <div className="fg"><label>Prefix</label><input value={prefix} onChange={(e) => setPrefix(e.target.value)} /></div>
+                  <div className="fg"><label>Financial Year</label><input value={financialYear} onChange={(e) => setFinancialYear(e.target.value)} /></div>
+                  <div className="fg"><label>Next Invoice Counter</label><input type="number" min="1" value={nextInvoiceCounter} onChange={(e) => setNextInvoiceCounter(parseInt(e.target.value) || 1)} /></div>
+                </div>
               </div>
-            </div>
+            </fieldset>
 
+            <div>{error && <Toast kind="err" message={error} />}</div>
             <div>{toast && <Toast kind="ok" message={toast} />}</div>
             <button className="btn bp" disabled={busy} onClick={handleSave}>Save Settings</button>
           </fieldset>

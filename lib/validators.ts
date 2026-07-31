@@ -25,17 +25,22 @@ export function isObjectId(v: unknown): v is string {
   return typeof v === "string" && /^[a-f0-9]{24}$/i.test(v);
 }
 
+// Bg_02: a service line with an amount but no category used to be accepted
+// (category was optional) — every line that counts as "entered" must now name
+// a category, matching the client-side check in InvoiceForm.tsx's save().
 export function validateInvoiceItems(
   items: unknown
 ): items is { category?: string; description?: string; detail?: string; amount: number }[] {
   return (
     Array.isArray(items) &&
     items.length > 0 &&
-    items.every(
-      (i) =>
-        i &&
-        typeof i === "object" &&
-        typeof (i as { amount?: unknown }).amount === "number"
-    )
+    items.every((i) => {
+      if (!i || typeof i !== "object") return false;
+      const row = i as { category?: unknown; description?: unknown; amount?: unknown };
+      if (typeof row.amount !== "number") return false;
+      const isEntered = (typeof row.description === "string" && row.description.trim()) || row.amount > 0;
+      if (!isEntered) return true; // a genuinely blank row is filtered out by the caller, not a validation failure
+      return isNonEmptyString(row.category);
+    })
   );
 }

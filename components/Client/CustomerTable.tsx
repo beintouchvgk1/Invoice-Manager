@@ -43,10 +43,10 @@ export function CustomerTable({
                 .filter(Boolean)
                 .join(", ");
               const clientInvoices = invoices.filter((i) => i.clientId === c._id);
+              const clientPayments = payments.filter((p) => paymentClientId(p) === c._id);
+              const hasHistory = clientInvoices.length > 0 || clientPayments.length > 0;
               const totalInvoiced = clientInvoices.reduce((s, i) => s + parseFloat(String(i.total || 0)), 0);
-              const totalReceived = payments
-                .filter((p) => paymentClientId(p) === c._id)
-                .reduce((s, p) => s + parseFloat(String(p.amount || 0)), 0);
+              const totalReceived = clientPayments.reduce((s, p) => s + parseFloat(String(p.amount || 0)), 0);
               const net = totalInvoiced - totalReceived;
               const isOverdue = clientInvoices.some((i) => ost(i) > 0 && ageD(i.date) > 30);
               let bal;
@@ -64,6 +64,12 @@ export function CustomerTable({
                 <tr key={c._id} style={isOverdue ? { background: "#fef2f2" } : undefined}>
                   <td>
                     <strong>{c.name}</strong>
+                    {c.__offlinePending && (
+                      <>
+                        {" "}
+                        <span className="bd bok" title="Made offline — will sync once you're back online">Pending Sync</span>
+                      </>
+                    )}
                     {c.groupName && (
                       <>
                         {" "}
@@ -86,7 +92,16 @@ export function CustomerTable({
                         + Payment
                       </button>
                       {canEdit && <button className="btn sm bp" onClick={() => onEdit(c)}>Edit</button>}
-                      {canDelete && <button className="btn sm brd" onClick={() => onDelete(c)}>Del</button>}
+                      {canDelete && (
+                        <button
+                          className="btn sm brd"
+                          disabled={hasHistory}
+                          title={hasHistory ? "This client has invoices or payments and cannot be deleted" : undefined}
+                          onClick={() => onDelete(c)}
+                        >
+                          Del
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -5,7 +5,7 @@ import Settings from "@/models/Settings";
 import { recalcInvoice } from "@/lib/recalcInvoice";
 import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
-import { isObjectId, isPositiveNumber, isValidDateStr } from "@/lib/validators";
+import { isNonEmptyString, isObjectId, isPositiveNumber, isValidDateStr } from "@/lib/validators";
 import { formatReceiptNo } from "@/lib/invoiceNumber";
 
 export async function GET(req: NextRequest) {
@@ -24,6 +24,14 @@ export async function POST(req: NextRequest) {
   if (body.invoiceId && !isObjectId(body.invoiceId)) return fail("Invalid invoice reference", 400);
 
   await connectDB();
+
+  // Idempotent replay guard — checked BEFORE claiming a counter value, so a
+  // retried sync of an already-committed create never burns a second receipt
+  // number.
+  if (isNonEmptyString(body.clientOpId)) {
+    const existing = await Payment.findOne({ clientOpId: body.clientOpId });
+    if (existing) return ok(existing, 200);
+  }
 
   try {
     let settings = await Settings.findOne();
@@ -47,6 +55,7 @@ export async function POST(req: NextRequest) {
       mode: body.mode === "Bank" ? "Bank" : "Cash",
       reference: body.reference?.trim() || "",
       notes: body.notes?.trim() || "",
+      clientOpId: isNonEmptyString(body.clientOpId) ? body.clientOpId : undefined,
     });
 
     if (payment.invoiceId) await recalcInvoice(payment.invoiceId);
@@ -54,6 +63,10 @@ export async function POST(req: NextRequest) {
     return ok(payment, 201);
   } catch (err) {
     if (err && typeof err === "object" && "code" in err && err.code === 11000) {
+      if (isNonEmptyString(body.clientOpId)) {
+        const winner = await Payment.findOne({ clientOpId: body.clientOpId });
+        if (winner) return ok(winner, 200);
+      }
       return fail("That receipt number was just taken by another request. Please try saving again.", 409);
     }
     console.error("POST /api/payments failed:", err);

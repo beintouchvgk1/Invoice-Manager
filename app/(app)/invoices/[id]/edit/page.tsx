@@ -17,7 +17,7 @@ export default function EditInvoicePage({ params }: { params: Promise<{ id: stri
 
   return (
     <>
-      <Header title="New Invoice" />
+      <Header title="Edit Invoice" />
       <div id="ct">
         {loading ? (
           <>

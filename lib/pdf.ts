@@ -6,6 +6,22 @@ function getLogoEl(): HTMLImageElement | null {
   return document.getElementById("logo") as HTMLImageElement | null;
 }
 
+// Stamps "Page X of Y" bottom-right of every page — only when the document
+// actually spans more than one, so a normal single-page invoice/receipt/ledger
+// looks exactly as it did before this was added.
+function stampPageNumbers(doc: jsPDF, right: number) {
+  const totalPages = doc.getNumberOfPages();
+  if (totalPages < 2) return;
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(120);
+    doc.text(`Page ${i} of ${totalPages}`, right, 293, { align: "right" });
+    doc.setTextColor(0, 0, 0);
+  }
+}
+
 export function genInvoicePDF(inv: Invoice, cl: Client | undefined, settings: Settings) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const client = cl || ({ name: "Unknown" } as Client);
@@ -13,6 +29,17 @@ export function genInvoicePDF(inv: Invoice, cl: Client | undefined, settings: Se
   const bank = settings.bankAccount;
   const ML = 15, PW = 180, CX = 105;
   let y = 10;
+
+  // Bg_11: with more than ~4 categories the fixed-height page used to run out of
+  // room and silently clip the signature/bank-details block. Push whatever doesn't
+  // fit onto a new page instead of overflowing it.
+  const PAGE_BOTTOM = 270;
+  const ensureSpace = (need: number) => {
+    if (y + need > PAGE_BOTTOM) {
+      doc.addPage();
+      y = 15;
+    }
+  };
 
   try {
     const lg = getLogoEl();
@@ -92,6 +119,7 @@ export function genInvoicePDF(inv: Invoice, cl: Client | undefined, settings: Se
     const dls = doc.splitTextToSize(item.description || "", CDSC - 4);
     const tls = item.detail ? doc.splitTextToSize(item.detail, CDSC - 10) : [];
     const rh = Math.max(10, (catLines.length + dls.length + tls.length) * lh + 4);
+    ensureSpace(rh);
     let iy = y + lh + 1;
     doc.text(String(idx + 1), ML + CSR / 2, iy, { align: "center" });
     if (catLines.length) {
@@ -115,6 +143,7 @@ export function genInvoicePDF(inv: Invoice, cl: Client | undefined, settings: Se
 
   const total = parseFloat(String(inv.total || 0));
   const tx = ML + CSR + CDSC;
+  ensureSpace(30);
   doc.setLineWidth(0.7);
   doc.line(tx, y, ML + PW, y);
   y += 2;
@@ -131,6 +160,7 @@ export function genInvoicePDF(inv: Invoice, cl: Client | undefined, settings: Se
   doc.setFont("helvetica", "normal");
   y += 13;
 
+  ensureSpace(45);
   const by = y;
   if (bank.bankName || bank.accountNumber) {
     doc.setFont("helvetica", "bold");
@@ -158,11 +188,31 @@ export function genInvoicePDF(inv: Invoice, cl: Client | undefined, settings: Se
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.text("Authorised Signatory", ML + PW, by + 24, { align: "right" });
+
+  // Bg_08: terms & conditions were set in Settings but never rendered on the PDF.
+  if (firm.termsAndConditions) {
+    doc.setFontSize(7.5);
+    const termLines = doc.splitTextToSize(firm.termsAndConditions, PW);
+    let ty = Math.max(y, by + 30);
+    if (ty + 4.5 + termLines.length * 3.8 > PAGE_BOTTOM) {
+      doc.addPage();
+      ty = 15;
+    }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("TERMS & CONDITIONS", ML, ty);
+    ty += 4.5;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    termLines.forEach((l: string) => { doc.text(l, ML, ty); ty += 3.8; });
+  }
+
   doc.setFontSize(7.5);
   doc.setLineWidth(0.4);
   doc.line(ML, 284, ML + PW, 284);
   doc.text([firm.name, firm.email, firm.mobile].filter(Boolean).join("  |  "), CX, 289, { align: "center" });
 
+  stampPageNumbers(doc, ML + PW);
   doc.save(inv.invoiceNumber.split("/").join("_") + ".pdf");
 }
 
@@ -240,6 +290,7 @@ export function genReceiptPDF(rec: Payment, invLabel: string, cl: Client | undef
   y += 24;
   doc.text("Authorised Signatory", ML + PW, y, { align: "right" });
 
+  stampPageNumbers(doc, ML + PW);
   doc.save(rec.receiptNumber.split("/").join("_") + ".pdf");
 }
 
@@ -349,5 +400,6 @@ export function genLedgerPDF(
   y += 5;
   doc.line(ML, y, ML + PW, y);
 
+  stampPageNumbers(doc, ML + PW);
   doc.save("Ledger_" + cl.name.replace(/[^a-zA-Z0-9]/g, "_") + ".pdf");
 }

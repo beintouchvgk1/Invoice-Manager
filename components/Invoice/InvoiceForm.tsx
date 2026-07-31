@@ -7,6 +7,7 @@ import { useSettings } from "@/hooks/useSettings";
 import { customerService } from "@/services/customer.service";
 import { invoiceService } from "@/services/invoice.service";
 import { settingsService } from "@/services/settings.service";
+import { offlineCreate, offlineUpdate } from "@/lib/offline/mutate";
 import { genInvoicePDF } from "@/lib/pdf";
 import { fI, td } from "@/lib/calc";
 import type { Invoice, InvoiceItem, InvoiceFormRow } from "@/lib/types";
@@ -71,15 +72,21 @@ export function InvoiceForm({ invoice }: { invoice?: Invoice }) {
     if (!clientId) return setError("Select a client.");
     const items = collectItems();
     if (!items.length) return setError("Add at least one service item.");
+    if (items.some((i) => !i.category)) return setError("Select a category for every service item entered.");
 
     setBusy(true);
     try {
       const payload = { date, clientId, items, notes: notes.trim(), paymentType };
       const saved = invoice
-        ? await invoiceService.update(invoice._id, payload)
-        : await invoiceService.create(payload);
+        ? await offlineUpdate("invoices", invoiceService, invoice._id, payload)
+        : await offlineCreate("invoices", invoiceService, payload);
 
-      if (print) {
+      // A queued-offline invoice has no real invoiceNumber yet (assigned only
+      // once the atomic counter is actually claimed during sync) — printing a
+      // PDF with a placeholder number would be a real GST/audit problem, so
+      // this is skipped rather than faked. The "Pending Sync" badge on the
+      // invoice list is the user's signal to come back and print once synced.
+      if (print && !saved.__offlinePending) {
         const [client, latestSettings] = await Promise.all([
           customerService.list().then((all) => all.find((c) => c._id === clientId)),
           settingsService.get(),

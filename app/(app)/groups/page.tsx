@@ -3,14 +3,21 @@ import { useState } from "react";
 import { Header } from "@/components/Layout/Header";
 import { SkeletonTable } from "@/components/Common/Skeleton";
 import { GroupModal } from "@/components/Group/GroupModal";
+import { Pagination } from "@/components/Common/Pagination";
 import { useGroups } from "@/hooks/useGroups";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useListControls } from "@/hooks/useListControls";
 import { fI } from "@/lib/calc";
+import type { Group } from "@/lib/types";
 
 export default function GroupsPage() {
   const { groups, loading, refresh } = useGroups();
   const { can } = useCurrentUser();
   const [editing, setEditing] = useState<string | null | undefined>(undefined);
+  const { search, setSearch, page, setPage, limit, setLimit, paged, total, totalPages } = useListControls(
+    groups,
+    (g: Group) => g.name
+  );
 
   return (
     <>
@@ -22,6 +29,15 @@ export default function GroupsPage() {
         {loading ? (
           <SkeletonTable columns={4} rows={6} />
         ) : (
+          <>
+          <div className="list-toolbar">
+            <input
+              className="list-search"
+              placeholder="Search by group name..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           <div className="tw">
             <table>
               <thead>
@@ -33,8 +49,8 @@ export default function GroupsPage() {
                 </tr>
               </thead>
               <tbody>
-                {groups.length ? (
-                  groups.map((g) => (
+                {paged.length ? (
+                  paged.map((g) => (
                     <tr key={g.name}>
                       <td><strong>{g.name}</strong></td>
                       <td>{g.memberCount} client(s)</td>
@@ -56,6 +72,8 @@ export default function GroupsPage() {
               </tbody>
             </table>
           </div>
+          <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} onLimitChange={setLimit} />
+          </>
         )}
       </div>
 

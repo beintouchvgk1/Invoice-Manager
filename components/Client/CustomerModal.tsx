@@ -4,6 +4,8 @@ import { Modal } from "@/components/Common/Modal";
 import { Toast } from "@/components/Common/Toast";
 import { groupService } from "@/services/group.service";
 import { customerService } from "@/services/customer.service";
+import { offlineCreate, offlineUpdate } from "@/lib/offline/mutate";
+import { isValidPhone } from "@/lib/validators";
 import type { Client } from "@/lib/types";
 
 export function CustomerModal({
@@ -35,6 +37,7 @@ export function CustomerModal({
   async function handleSave() {
     setError("");
     if (!name.trim()) return setError("Name required");
+    if (mobile.trim() && !isValidPhone(mobile)) return setError("Mobile number can only contain digits and a leading +");
     setBusy(true);
     try {
       const payload = {
@@ -48,8 +51,8 @@ export function CustomerModal({
         pincode: pincode.trim(),
         mobile: mobile.trim(),
       };
-      if (client) await customerService.update(client._id, payload);
-      else await customerService.create(payload);
+      if (client) await offlineUpdate("clients", customerService, client._id, payload);
+      else await offlineCreate("clients", customerService, payload);
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save client");

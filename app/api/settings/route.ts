@@ -1,11 +1,17 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Settings from "@/models/Settings";
-import { requirePermission } from "@/lib/requireAuth";
-import { ok, fail } from "@/lib/response";
+import { requirePermission, requireAnyPermission } from "@/lib/requireAuth";
+import { ok, fail, conflict } from "@/lib/response";
+import { updatedAtMismatch } from "@/lib/conflictCheck";
 
+// Bg_09: invoice forms need settings (categories, invoice numbering) to build the
+// invoice, so reading it can't be gated by settings.view alone.
 export async function GET(req: NextRequest) {
-  if (!(await requirePermission(req, "settings.view"))) return fail("Unauthorized", 401);
+  if (
+    !(await requireAnyPermission(req, ["settings.view", "invoices.create", "invoices.edit"]))
+  )
+    return fail("Unauthorized", 401);
   await connectDB();
   let settings = await Settings.findOne();
   if (!settings) settings = await Settings.create({});
@@ -20,6 +26,9 @@ export async function PUT(req: NextRequest) {
   await connectDB();
   let settings = await Settings.findOne();
   if (!settings) settings = new Settings({});
+  else if (updatedAtMismatch(settings, body.baseUpdatedAt)) {
+    return conflict("Settings were changed elsewhere since you last saw them.", settings.toJSON());
+  }
 
   const firm = body.firmDetails || {};
   settings.firmDetails.name = firm.name?.trim() || settings.firmDetails.name;

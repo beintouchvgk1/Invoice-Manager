@@ -5,6 +5,7 @@ import { Toast } from "@/components/Common/Toast";
 import { customerService } from "@/services/customer.service";
 import { invoiceService } from "@/services/invoice.service";
 import { paymentService } from "@/services/payment.service";
+import { offlineCreate, offlineUpdate } from "@/lib/offline/mutate";
 import { fI, td, ost } from "@/lib/calc";
 import type { Client, Invoice, Payment } from "@/lib/types";
 
@@ -12,12 +13,16 @@ export function PaymentModal({
   payment,
   presetClientId,
   presetInvoiceId,
+  locked,
   onClose,
   onSaved,
 }: {
   payment?: Payment;
   presetClientId?: string;
   presetInvoiceId?: string;
+  // Bg_12: when opened from an invoice's own "+ Payment" action, the client and
+  // invoice it's for are already fixed by context and shouldn't be changeable.
+  locked?: boolean;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -65,8 +70,8 @@ export function PaymentModal({
         reference: reference.trim(),
         notes: notes.trim(),
       };
-      if (payment) await paymentService.update(payment._id, payload);
-      else await paymentService.create(payload);
+      if (payment) await offlineUpdate("payments", paymentService, payment._id, payload);
+      else await offlineCreate("payments", paymentService, payload);
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save payment");
@@ -82,7 +87,11 @@ export function PaymentModal({
       <div className="g2" style={{ marginBottom: 12 }}>
         <div className="fg fl">
           <label>Client *</label>
-          <select value={clientId} onChange={(e) => { setClientId(e.target.value); setInvoiceId(""); }}>
+          <select
+            value={clientId}
+            disabled={locked}
+            onChange={(e) => { setClientId(e.target.value); setInvoiceId(""); }}
+          >
             <option value="">- Select Client -</option>
             {clients.map((c) => (
               <option key={c._id} value={c._id}>{c.name}</option>
@@ -91,7 +100,7 @@ export function PaymentModal({
         </div>
         <div className="fg fl">
           <label>Against Invoice</label>
-          <select value={invoiceId} onChange={(e) => setInvoiceId(e.target.value)}>
+          <select value={invoiceId} disabled={locked} onChange={(e) => setInvoiceId(e.target.value)}>
             <option value="">Advance Payment (No Invoice)</option>
             {invoices.map((i) => (
               <option key={i._id} value={i._id}>{i.invoiceNumber} — Rs. {fI(ost(i))} outstanding</option>

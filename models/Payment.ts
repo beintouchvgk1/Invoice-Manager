@@ -10,6 +10,10 @@ export const PaymentSchema = new Schema(
     mode: { type: String, enum: ["Cash", "Bank"], default: "Cash" },
     reference: { type: String, default: "" },
     notes: { type: String, default: "" },
+    // See models/Client.ts's clientOpId — same idempotent-replay guard, doubly
+    // important here since a duplicate create would also burn an extra receipt
+    // number from the atomic counter.
+    clientOpId: { type: String, default: null, unique: true, sparse: true },
   },
   { timestamps: true }
 );

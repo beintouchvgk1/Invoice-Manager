@@ -3,6 +3,10 @@
 There is no RTK Query/React Query here — it's a plain three-layer pattern. Follow it exactly for any
 new resource so it matches every existing feature (customers, invoices, payments, groups, settings).
 
+**Offline caching**: every `use{Name}.ts` hook below wraps `hooks/useOfflineResource.ts` instead of
+managing its own `useState`/`useEffect` — see `references/offline.md` before adding a new resource hook,
+don't hand-roll the fetch/loading/error dance shown below from scratch.
+
 ## 1. `services/http.ts` (already exists, don't duplicate)
 ```typescript
 export const http = {

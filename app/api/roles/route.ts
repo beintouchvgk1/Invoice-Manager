@@ -1,13 +1,16 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Role from "@/models/Role";
-import { requirePermission } from "@/lib/requireAuth";
+import { requirePermission, requireAnyPermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isNonEmptyString } from "@/lib/validators";
 import { isValidPermission } from "@/lib/constants";
 
+// Bg_21: the Add/Edit User form needs the role list for its dropdown, so reading it
+// can't be gated by roles.view alone.
 export async function GET(req: NextRequest) {
-  if (!(await requirePermission(req, "roles.view"))) return fail("Unauthorized", 401);
+  if (!(await requireAnyPermission(req, ["roles.view", "users.create", "users.edit"])))
+    return fail("Unauthorized", 401);
   await connectDB();
   const roles = await Role.find().sort({ name: 1 }).lean();
   return ok(roles);
