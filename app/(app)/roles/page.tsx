@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/Layout/Header";
 import { SkeletonBlock } from "@/components/Common/Skeleton";
 import { RoleModal } from "@/components/Role/RoleModal";
+import { ConfirmModal } from "@/components/Common/ConfirmModal";
 import { useRoles } from "@/hooks/useRoles";
 import { roleService } from "@/services/role.service";
 import { useToast } from "@/hooks/useToast";
@@ -37,6 +38,8 @@ export default function RolesPage() {
   const [busyRoleId, setBusyRoleId] = useState<string | null>(null);
   const [draftPermissions, setDraftPermissions] = useState<string[]>([]);
   const [savingPermissions, setSavingPermissions] = useState(false);
+  const [pendingRoleId, setPendingRoleId] = useState<string | null>(null);
+  const [roleSearch, setRoleSearch] = useState("");
 
   useEffect(() => {
     if (roles.length && !roles.some((r) => r._id === selectedId)) setSelectedId(roles[0]._id);
@@ -55,6 +58,12 @@ export default function RolesPage() {
   }, [selectedId, roles]);
 
   const isDirty = !isSuperAdminRole && !!selectedRole && !sameSet(draftPermissions, selectedRole.permissions);
+
+  const filteredRoles = useMemo(() => {
+    const q = roleSearch.trim().toLowerCase();
+    if (!q) return roles;
+    return roles.filter((r) => r.name.toLowerCase().includes(q));
+  }, [roles, roleSearch]);
 
   const filteredModules = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -79,10 +88,27 @@ export default function RolesPage() {
     }
   }
 
-  function togglePermission(permissionKey: string) {
-    setDraftPermissions((prev) =>
-      prev.includes(permissionKey) ? prev.filter((p) => p !== permissionKey) : [...prev, permissionKey]
-    );
+  // Bg_22: a role could be saved with "Create Invoice" checked but "View Invoices"
+  // unchecked — the create/edit/delete API routes are useless without the view
+  // permission the UI (client list, invoice list, etc.) also depends on. Checking
+  // any non-view action now auto-checks that module's view permission too.
+  function togglePermission(moduleKey: string, actionKey: string) {
+    const permissionKey = `${moduleKey}.${actionKey}`;
+    const viewKey = `${moduleKey}.view`;
+    const modulePrefix = `${moduleKey}.`;
+    setDraftPermissions((prev) => {
+      if (prev.includes(permissionKey)) {
+        // Unchecking "view" while a sibling create/edit/delete is still checked
+        // would recreate the same broken state — take those with it.
+        if (actionKey === "view") {
+          return prev.filter((p) => !p.startsWith(modulePrefix));
+        }
+        return prev.filter((p) => p !== permissionKey);
+      }
+      const next = [...prev, permissionKey];
+      if (actionKey !== "view" && !next.includes(viewKey)) next.push(viewKey);
+      return next;
+    });
   }
 
   function resetDraft() {
@@ -139,15 +165,25 @@ export default function RolesPage() {
           <div className="perm-layout">
             <div className="perm-roles-panel">
               <div className="perm-panel-label">Roles</div>
+              <input
+                className="perm-search"
+                style={{ marginBottom: 10 }}
+                placeholder="Search roles..."
+                value={roleSearch}
+                onChange={(e) => setRoleSearch(e.target.value)}
+              />
               <div className="perm-role-list">
-                {roles.length ? (
-                  roles.map((r) => (
+                {filteredRoles.length ? (
+                  filteredRoles.map((r) => (
                     <button
                       key={r._id}
                       type="button"
                       className={`perm-role-item${r._id === selectedId ? " active" : ""}`}
                       onClick={() => {
-                        if (r._id !== selectedId && isDirty && !confirm("Discard unsaved permission changes?")) return;
+                        if (r._id !== selectedId && isDirty) {
+                          setPendingRoleId(r._id);
+                          return;
+                        }
                         setSelectedId(r._id);
                       }}
                     >
@@ -157,7 +193,7 @@ export default function RolesPage() {
                     </button>
                   ))
                 ) : (
-                  <div className="em">No roles yet.</div>
+                  <div className="em">{roles.length ? "No roles match your search." : "No roles yet."}</div>
                 )}
               </div>
             </div>
@@ -229,7 +265,7 @@ export default function RolesPage() {
                                   type="checkbox"
                                   checked={checked}
                                   disabled={isSuperAdminRole || savingPermissions}
-                                  onChange={() => togglePermission(permissionKey)}
+                                  onChange={() => togglePermission(m.key, a.key)}
                                 />
                                 <span>{a.label}</span>
                               </label>
@@ -259,6 +295,19 @@ export default function RolesPage() {
           }}
         />
       )}
+
+      <ConfirmModal
+        open={!!pendingRoleId}
+        title="Discard Unsaved Changes"
+        message="You have unsaved permission changes for this role. Switching roles now will discard them. Continue?"
+        confirmLabel="Discard & Switch"
+        destructive
+        onConfirm={() => {
+          if (pendingRoleId) setSelectedId(pendingRoleId);
+          setPendingRoleId(null);
+        }}
+        onCancel={() => setPendingRoleId(null)}
+      />
     </>
   );
 }

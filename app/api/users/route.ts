@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
   const [existingUser, role] = await Promise.all([User.findOne({ email }), Role.findById(body.roleId)]);
   if (existingUser) return fail("A user with this email already exists", 409);
   if (!role) return fail("Selected role does not exist", 400);
+  if (!role.isActive) return fail("Cannot assign a deactivated role", 400);
 
   // Granting a user the super_admin role is the one action a delegated
   // users.create permission can't perform on its own — only an actual super
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   const user = await User.create({
+    name: isNonEmptyString(body.name) ? body.name.trim() : "",
     email,
     password: await hashPassword(body.password),
     phone: isNonEmptyString(body.phone) ? body.phone.trim() : null,
@@ -45,7 +47,7 @@ export async function POST(req: NextRequest) {
     isActive: true,
   });
   return ok(
-    { _id: user._id, email: user.email, phone: user.phone, roleId: user.roleId, isActive: user.isActive },
+    { _id: user._id, name: user.name, email: user.email, phone: user.phone, roleId: user.roleId, isActive: user.isActive },
     201
   );
 }

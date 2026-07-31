@@ -5,6 +5,7 @@ import { Toast } from "@/components/Common/Toast";
 import { groupService } from "@/services/group.service";
 import { customerService } from "@/services/customer.service";
 import { offlineCreate, offlineUpdate } from "@/lib/offline/mutate";
+import { isValidPhone } from "@/lib/validators";
 import type { Client } from "@/lib/types";
 
 export function CustomerModal({
@@ -36,6 +37,7 @@ export function CustomerModal({
   async function handleSave() {
     setError("");
     if (!name.trim()) return setError("Name required");
+    if (mobile.trim() && !isValidPhone(mobile)) return setError("Mobile number can only contain digits and a leading +");
     setBusy(true);
     try {
       const payload = {

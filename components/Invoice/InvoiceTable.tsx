@@ -23,7 +23,7 @@ export function InvoiceTable({
 }) {
   const router = useRouter();
   const clientName = (clientId: string) => clients.find((c) => c._id === clientId)?.name || "Unknown";
-  const rows = invoices.slice().reverse();
+  const rows = invoices;
 
   return (
     <div className="tw">

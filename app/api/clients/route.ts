@@ -1,12 +1,23 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Client from "@/models/Client";
-import { requirePermission } from "@/lib/requireAuth";
+import { requirePermission, requireAnyPermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
-import { isNonEmptyString } from "@/lib/validators";
+import { isNonEmptyString, isValidPhone } from "@/lib/validators";
 
+// Bg_09: invoice/payment forms need the client list to populate their Client picker,
+// so reading it can't be gated by customers.view alone.
 export async function GET(req: NextRequest) {
-  if (!(await requirePermission(req, "customers.view"))) return fail("Unauthorized", 401);
+  if (
+    !(await requireAnyPermission(req, [
+      "customers.view",
+      "invoices.create",
+      "invoices.edit",
+      "payments.create",
+      "payments.edit",
+    ]))
+  )
+    return fail("Unauthorized", 401);
   await connectDB();
   const group = req.nextUrl.searchParams.get("group");
   const filter = group ? { groupName: group } : {};
@@ -18,6 +29,7 @@ export async function POST(req: NextRequest) {
   if (!(await requirePermission(req, "customers.create"))) return fail("Unauthorized", 401);
   const body = await req.json().catch(() => null);
   if (!body || !isNonEmptyString(body.name)) return fail("Client name is required", 400);
+  if (body.mobile?.trim() && !isValidPhone(body.mobile)) return fail("Enter a valid mobile number", 400);
 
   await connectDB();
 

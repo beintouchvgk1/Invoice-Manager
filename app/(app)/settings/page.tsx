@@ -8,6 +8,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import { settingsService } from "@/services/settings.service";
 import { offlineUpdateSettings } from "@/lib/offline/mutate";
+import { isValidEmail, isValidPhone } from "@/lib/validators";
 
 export default function SettingsPage() {
   const { settings, loading, refresh } = useSettings();
@@ -35,6 +36,7 @@ export default function SettingsPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState("");
   const [toast, setToast] = useState("");
+  const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -74,6 +76,12 @@ export default function SettingsPage() {
   async function addCategory() {
     const v = newCategory.trim();
     if (!v) return;
+    // Bg_19: category names were only compared client-side after the fact — two
+    // entries differing only by case ("GST" / "gst") used to both get created.
+    if (categories.some((c) => c.toLowerCase() === v.toLowerCase())) {
+      setError(`"${v}" already exists as a category`);
+      return;
+    }
     const updated = [...categories, v];
     setCategories(updated);
     setNewCategory("");
@@ -87,6 +95,16 @@ export default function SettingsPage() {
   }
 
   async function handleSave() {
+    setError("");
+    // Bg_18: the form used to accept anything (blank firm name, garbage email/mobile/
+    // account number) with no feedback until the invoice PDF quietly showed the mess.
+    if (!name.trim()) return setError("Firm name is required");
+    if (email.trim() && !isValidEmail(email)) return setError("Enter a valid firm email address");
+    if (mobile.trim() && !isValidPhone(mobile)) return setError("Firm mobile number can only contain digits and a leading +");
+    if (accountNumber.trim() && !/^\d+$/.test(accountNumber.trim())) return setError("Account number can only contain digits");
+    if (ifscCode.trim() && !/^[A-Za-z]{4}0[A-Z0-9a-z]{6}$/.test(ifscCode.trim())) return setError("Enter a valid IFSC code (e.g. HDFC0001234)");
+    if (!prefix.trim()) return setError("Invoice prefix is required");
+
     setBusy(true);
     try {
       await offlineUpdateSettings(settingsService, {
@@ -203,6 +221,7 @@ export default function SettingsPage() {
               </div>
             </fieldset>
 
+            <div>{error && <Toast kind="err" message={error} />}</div>
             <div>{toast && <Toast kind="ok" message={toast} />}</div>
             <button className="btn bp" disabled={busy} onClick={handleSave}>Save Settings</button>
           </fieldset>

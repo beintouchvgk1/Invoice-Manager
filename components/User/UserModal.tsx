@@ -26,12 +26,14 @@ export function UserModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState(user?.phone || "");
   const [password, setPassword] = useState("");
   const [roleId, setRoleId] = useState(user?.roleId._id || roles[0]?._id || "");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSave() {
     setError("");
@@ -46,13 +48,14 @@ export function UserModal({
     try {
       if (user) {
         await userService.update(user._id, {
+          name: name.trim(),
           email: email.trim(),
           phone: phone.trim(),
           roleId,
           ...(password ? { password } : {}),
         });
       } else {
-        await userService.create({ email: email.trim(), password, phone: phone.trim(), roleId });
+        await userService.create({ name: name.trim(), email: email.trim(), password, phone: phone.trim(), roleId });
       }
       onSaved();
     } catch (err) {
@@ -68,6 +71,10 @@ export function UserModal({
       {error && <Toast kind="err" message={error} />}
       <div className="g2">
         <div className="fg">
+          <label>Name</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
+        <div className="fg">
           <label>Email *</label>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
@@ -82,13 +89,37 @@ export function UserModal({
         </div>
         <div className="fg">
           <label>{user ? "New Password (leave blank to keep current)" : "Password *"}</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <div className="pw-wrap">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => setShowPassword((s) => !s)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-10-8-10-8a18.5 18.5 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              ) : (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
         <div className="fg">
           <label>Role *</label>
           <select value={roleId} onChange={(e) => setRoleId(e.target.value)}>
             {roles.map((r) => (
-              <option key={r._id} value={r._id}>{r.name}</option>
+              <option key={r._id} value={r._id}>{r.name}{!r.isActive ? " (Inactive)" : ""}</option>
             ))}
           </select>
         </div>

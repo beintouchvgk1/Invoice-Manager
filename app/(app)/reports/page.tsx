@@ -2,11 +2,13 @@
 import { useMemo, useState } from "react";
 import { Header } from "@/components/Layout/Header";
 import { SkeletonBlock, SkeletonTable } from "@/components/Common/Skeleton";
+import { Pagination } from "@/components/Common/Pagination";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useInvoices } from "@/hooks/useInvoices";
 import { usePayments } from "@/hooks/usePayments";
+import { useListControls } from "@/hooks/useListControls";
 import { fI, fD, ageD, ost } from "@/lib/calc";
-import type { ReportTab } from "@/lib/types";
+import type { Invoice, ReportTab } from "@/lib/types";
 
 export default function ReportsPage() {
   const { customers, loading: l1 } = useCustomers();
@@ -81,36 +83,59 @@ function OutstandingReport({
   if (fromDate) rows = rows.filter((i) => i.date >= fromDate);
   if (toDate) rows = rows.filter((i) => i.date <= toDate);
   rows = rows.slice().sort((a, b) => a.date.localeCompare(b.date));
-  const total = rows.reduce((s, i) => s + ost(i), 0);
+  const searchText = (i: Invoice) => [i.invoiceNumber, clientName(i.clientId)].join(" ");
+  const list = useListControls(rows, searchText);
+  // TOTAL tracks the search-matched rows, not just the visible page.
+  const total = list.filtered.reduce((s, i) => s + ost(i), 0);
 
   return (
-    <table>
-      <thead>
-        <tr><th>Invoice No</th><th>Date</th><th>Age</th><th>Client</th><th style={{ textAlign: "right" }}>Invoice Total</th><th style={{ textAlign: "right" }}>Received</th><th style={{ textAlign: "right" }}>Outstanding</th></tr>
-      </thead>
-      <tbody>
-        {rows.map((i) => {
-          const age = ageD(i.date);
-          return (
-            <tr key={i._id} style={age > 30 ? { background: "#fef2f2" } : undefined}>
-              <td>{i.invoiceNumber}</td>
-              <td>{fD(i.date)}</td>
-              <td>{age > 30 ? <span className="bd bun">{age}d</span> : `${age}d`}</td>
-              <td>{clientName(i.clientId)}</td>
-              <td style={{ textAlign: "right" }}>Rs. {fI(i.total)}</td>
-              <td style={{ textAlign: "right" }}>Rs. {fI(i.paidAmount || 0)}</td>
-              <td style={{ textAlign: "right", fontWeight: 700, color: "#dc2626" }}>Rs. {fI(ost(i))}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-      <tfoot>
-        <tr>
-          <td colSpan={6} style={{ textAlign: "right", fontWeight: 700, padding: "8px 11px" }}>TOTAL OUTSTANDING</td>
-          <td style={{ fontWeight: 700, textAlign: "right", padding: "8px 11px", color: "#dc2626" }}>Rs. {fI(total)}</td>
-        </tr>
-      </tfoot>
-    </table>
+    <>
+      <div className="list-toolbar" style={{ padding: "12px 12px 0" }}>
+        <input
+          className="list-search"
+          placeholder="Search by invoice number or client..."
+          value={list.search}
+          onChange={(e) => list.setSearch(e.target.value)}
+        />
+      </div>
+      <table>
+        <thead>
+          <tr><th>Invoice No</th><th>Date</th><th>Age</th><th>Client</th><th style={{ textAlign: "right" }}>Invoice Total</th><th style={{ textAlign: "right" }}>Received</th><th style={{ textAlign: "right" }}>Outstanding</th></tr>
+        </thead>
+        <tbody>
+          {list.paged.map((i) => {
+            const age = ageD(i.date);
+            return (
+              <tr key={i._id} style={age > 30 ? { background: "#fef2f2" } : undefined}>
+                <td>{i.invoiceNumber}</td>
+                <td>{fD(i.date)}</td>
+                <td>{age > 30 ? <span className="bd bun">{age}d</span> : `${age}d`}</td>
+                <td>{clientName(i.clientId)}</td>
+                <td style={{ textAlign: "right" }}>Rs. {fI(i.total)}</td>
+                <td style={{ textAlign: "right" }}>Rs. {fI(i.paidAmount || 0)}</td>
+                <td style={{ textAlign: "right", fontWeight: 700, color: "#dc2626" }}>Rs. {fI(ost(i))}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colSpan={6} style={{ textAlign: "right", fontWeight: 700, padding: "8px 11px" }}>TOTAL OUTSTANDING</td>
+            <td style={{ fontWeight: 700, textAlign: "right", padding: "8px 11px", color: "#dc2626" }}>Rs. {fI(total)}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <div style={{ padding: "0 12px 12px" }}>
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          total={list.total}
+          limit={list.limit}
+          onPageChange={list.setPage}
+          onLimitChange={list.setLimit}
+        />
+      </div>
+    </>
   );
 }
 
@@ -131,38 +156,63 @@ function ReceivedReport({
   if (fromDate) rows = rows.filter((r) => r.date >= fromDate);
   if (toDate) rows = rows.filter((r) => r.date <= toDate);
   rows = rows.sort((a, b) => b.date.localeCompare(a.date));
-  const total = rows.reduce((s, r) => s + parseFloat(String(r.amount || 0)), 0);
   const paymentClientId = (p: (typeof rows)[number]) => p.clientId || invoices.find((i) => i._id === p.invoiceId)?.clientId || "";
+  const invoiceNumber = (p: (typeof rows)[number]) => invoices.find((i) => i._id === p.invoiceId)?.invoiceNumber || "";
+  const searchText = (r: (typeof rows)[number]) =>
+    [r.receiptNumber, clientName(paymentClientId(r)), r.reference, invoiceNumber(r)].filter(Boolean).join(" ");
+  const list = useListControls(rows, searchText);
+  // TOTAL tracks the search-matched rows, not just the visible page.
+  const total = list.filtered.reduce((s, r) => s + parseFloat(String(r.amount || 0)), 0);
 
   return (
-    <table>
-      <thead>
-        <tr><th>Receipt No</th><th>Date</th><th>Client</th><th>Against</th><th style={{ textAlign: "right" }}>Amount</th><th>Mode</th><th>Reference</th></tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => {
-          const inv = invoices.find((i) => i._id === r.invoiceId);
-          return (
-            <tr key={r._id}>
-              <td>{r.receiptNumber}</td>
-              <td>{fD(r.date)}</td>
-              <td>{clientName(paymentClientId(r))}</td>
-              <td>{inv ? inv.invoiceNumber : <span className="bd bok">Advance</span>}</td>
-              <td style={{ textAlign: "right" }}>Rs. {fI(r.amount)}</td>
-              <td>{r.mode || "Cash"}</td>
-              <td>{r.reference || "—"}</td>
-            </tr>
-          );
-        })}
-      </tbody>
-      <tfoot>
-        <tr>
-          <td colSpan={4} style={{ textAlign: "right", fontWeight: 700, padding: "8px 11px" }}>TOTAL INCOME RECEIVED</td>
-          <td style={{ fontWeight: 700, textAlign: "right", padding: "8px 11px", color: "#059669" }}>Rs. {fI(total)}</td>
-          <td colSpan={2}></td>
-        </tr>
-      </tfoot>
-    </table>
+    <>
+      <div className="list-toolbar" style={{ padding: "12px 12px 0" }}>
+        <input
+          className="list-search"
+          placeholder="Search by receipt no, client, reference, invoice..."
+          value={list.search}
+          onChange={(e) => list.setSearch(e.target.value)}
+        />
+      </div>
+      <table>
+        <thead>
+          <tr><th>Receipt No</th><th>Date</th><th>Client</th><th>Against</th><th style={{ textAlign: "right" }}>Amount</th><th>Mode</th><th>Reference</th></tr>
+        </thead>
+        <tbody>
+          {list.paged.map((r) => {
+            const inv = invoices.find((i) => i._id === r.invoiceId);
+            return (
+              <tr key={r._id}>
+                <td>{r.receiptNumber}</td>
+                <td>{fD(r.date)}</td>
+                <td>{clientName(paymentClientId(r))}</td>
+                <td>{inv ? inv.invoiceNumber : <span className="bd bok">Advance</span>}</td>
+                <td style={{ textAlign: "right" }}>Rs. {fI(r.amount)}</td>
+                <td>{r.mode || "Cash"}</td>
+                <td>{r.reference || "—"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colSpan={4} style={{ textAlign: "right", fontWeight: 700, padding: "8px 11px" }}>TOTAL INCOME RECEIVED</td>
+            <td style={{ fontWeight: 700, textAlign: "right", padding: "8px 11px", color: "#059669" }}>Rs. {fI(total)}</td>
+            <td colSpan={2}></td>
+          </tr>
+        </tfoot>
+      </table>
+      <div style={{ padding: "0 12px 12px" }}>
+        <Pagination
+          page={list.page}
+          totalPages={list.totalPages}
+          total={list.total}
+          limit={list.limit}
+          onPageChange={list.setPage}
+          onLimitChange={list.setLimit}
+        />
+      </div>
+    </>
   );
 }
 

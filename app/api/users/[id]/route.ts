@@ -45,6 +45,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
     return fail("Only a super admin can modify a super admin account", 403);
   }
 
+  if (typeof body.name === "string") user.name = body.name.trim();
+
   if (isNonEmptyString(body.email)) {
     if (!isValidEmail(body.email)) return fail("A valid email is required", 400);
     const email = body.email.trim().toLowerCase();
@@ -65,6 +67,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   if (isNonEmptyString(body.roleId) && isObjectId(body.roleId) && body.roleId !== String(user.roleId)) {
     const newRole = await Role.findById(body.roleId);
     if (!newRole) return fail("Selected role does not exist", 400);
+    if (!newRole.isActive) return fail("Cannot assign a deactivated role", 400);
 
     // Promoting a user to super_admin is the one action a delegated users.edit
     // permission can't perform on its own — same reasoning as user creation above.
@@ -88,7 +91,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   }
 
   await user.save();
-  return ok({ _id: user._id, email: user.email, phone: user.phone, roleId: user.roleId, isActive: user.isActive });
+  return ok({ _id: user._id, name: user.name, email: user.email, phone: user.phone, roleId: user.roleId, isActive: user.isActive });
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {

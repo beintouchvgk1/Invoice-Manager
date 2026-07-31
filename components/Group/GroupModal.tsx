@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/Common/Modal";
+import { ConfirmModal } from "@/components/Common/ConfirmModal";
 import { Toast } from "@/components/Common/Toast";
 import { customerService } from "@/services/customer.service";
 import { groupService } from "@/services/group.service";
@@ -20,6 +21,7 @@ export function GroupModal({
   const [addSel, setAddSel] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     customerService.list().then(setClients).catch(() => {});
@@ -63,7 +65,6 @@ export function GroupModal({
 
   async function handleDelete() {
     if (!groupName) return;
-    if (!confirm(`Delete group "${groupName}"? Clients in it will be ungrouped (clients are not deleted).`)) return;
     setBusy(true);
     try {
       await groupService.remove(groupName);
@@ -71,6 +72,8 @@ export function GroupModal({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete group");
       setBusy(false);
+    } finally {
+      setShowDeleteConfirm(false);
     }
   }
 
@@ -124,9 +127,20 @@ export function GroupModal({
 
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <button className="btn bs" onClick={onClose}>Cancel</button>
-        {groupName && <button className="btn brd" disabled={busy} onClick={handleDelete}>Delete Group</button>}
+        {groupName && <button className="btn brd" disabled={busy} onClick={() => setShowDeleteConfirm(true)}>Delete Group</button>}
         <button className="btn bp" disabled={busy} onClick={handleSave}>{groupName ? "Save Changes" : "Create Group"}</button>
       </div>
+
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="Delete Group"
+        message={`Are you sure you want to delete "${groupName}"? Clients in it will be ungrouped (clients themselves are not deleted).`}
+        confirmLabel="Delete"
+        destructive
+        busy={busy}
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </Modal>
   );
 }

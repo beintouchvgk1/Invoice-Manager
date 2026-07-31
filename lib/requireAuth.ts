@@ -50,3 +50,15 @@ export async function requirePermission(req: NextRequest, permission: string) {
   if (!user.roleId?.permissions.includes(permission)) return null;
   return user;
 }
+
+// Bg_09/Bg_21: some reference-data reads (client list, category list, role list) are
+// needed by more than one feature's create/edit form, not only by their "own" module's
+// view permission — e.g. a user with only invoices.create still needs to read the
+// client list to pick one. Passes if the caller holds ANY of the given permissions.
+export async function requireAnyPermission(req: NextRequest, permissions: string[]) {
+  const user = await loadAuthedUser(req);
+  if (!user) return null;
+  if (user.roleId?.name === ROLES.SUPER_ADMIN) return user;
+  if (!permissions.some((p) => user.roleId?.permissions.includes(p))) return null;
+  return user;
+}

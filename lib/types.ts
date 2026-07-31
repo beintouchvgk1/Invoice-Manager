@@ -57,6 +57,25 @@ export type OfflineResourceState<T> = { data: T; loading: boolean; error: string
 // online-only, same as roles/users (see references/offline.md).
 export type OfflineWritableResource = "clients" | "payments" | "invoices" | "settings";
 
+// --- hooks/useListControls.ts ---
+// Client-side search + pagination over an already-fetched array — every listing
+// page's data already lives in memory (see rules/data-pattern.md), so there's no
+// server-side page/limit query param involved, just a slice for display.
+export type ListControls<T> = {
+  search: string;
+  setSearch: (v: string) => void;
+  page: number;
+  setPage: (v: number) => void;
+  limit: number;
+  setLimit: (v: number) => void;
+  // Search-matched items before pagination — use this (not `paged`) for any
+  // summary total that should track the search, not just the visible page.
+  filtered: T[];
+  paged: T[];
+  total: number;
+  totalPages: number;
+};
+
 export type QueuedOpType = "create" | "update" | "delete";
 export type QueuedOpStatus = "pending" | "inflight" | "conflict" | "failed";
 
@@ -145,6 +164,7 @@ export type Role = {
 // so on the frontend it's the full Role object, not a raw id.
 export type User = {
   _id: string;
+  name?: string;
   email: string;
   phone?: string | null;
   roleId: Role;

@@ -72,6 +72,7 @@ export function InvoiceForm({ invoice }: { invoice?: Invoice }) {
     if (!clientId) return setError("Select a client.");
     const items = collectItems();
     if (!items.length) return setError("Add at least one service item.");
+    if (items.some((i) => !i.category)) return setError("Select a category for every service item entered.");
 
     setBusy(true);
     try {
