@@ -6,6 +6,22 @@ function getLogoEl(): HTMLImageElement | null {
   return document.getElementById("logo") as HTMLImageElement | null;
 }
 
+// Stamps "Page X of Y" bottom-right of every page — only when the document
+// actually spans more than one, so a normal single-page invoice/receipt/ledger
+// looks exactly as it did before this was added.
+function stampPageNumbers(doc: jsPDF, right: number) {
+  const totalPages = doc.getNumberOfPages();
+  if (totalPages < 2) return;
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(120);
+    doc.text(`Page ${i} of ${totalPages}`, right, 293, { align: "right" });
+    doc.setTextColor(0, 0, 0);
+  }
+}
+
 export function genInvoicePDF(inv: Invoice, cl: Client | undefined, settings: Settings) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const client = cl || ({ name: "Unknown" } as Client);
@@ -196,6 +212,7 @@ export function genInvoicePDF(inv: Invoice, cl: Client | undefined, settings: Se
   doc.line(ML, 284, ML + PW, 284);
   doc.text([firm.name, firm.email, firm.mobile].filter(Boolean).join("  |  "), CX, 289, { align: "center" });
 
+  stampPageNumbers(doc, ML + PW);
   doc.save(inv.invoiceNumber.split("/").join("_") + ".pdf");
 }
 
@@ -273,6 +290,7 @@ export function genReceiptPDF(rec: Payment, invLabel: string, cl: Client | undef
   y += 24;
   doc.text("Authorised Signatory", ML + PW, y, { align: "right" });
 
+  stampPageNumbers(doc, ML + PW);
   doc.save(rec.receiptNumber.split("/").join("_") + ".pdf");
 }
 
@@ -382,5 +400,6 @@ export function genLedgerPDF(
   y += 5;
   doc.line(ML, y, ML + PW, y);
 
+  stampPageNumbers(doc, ML + PW);
   doc.save("Ledger_" + cl.name.replace(/[^a-zA-Z0-9]/g, "_") + ".pdf");
 }
