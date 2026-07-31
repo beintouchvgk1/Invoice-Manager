@@ -6,7 +6,10 @@ import type { PERMISSION_MODULES } from "@/lib/constants/permissions";
 export type RouteParams<K extends string = "id"> = { params: Promise<Record<K, string>> };
 
 // --- services/http.ts response envelope ---
-export type ApiResponse<T> = { success: true; data: T } | { success: false; error: string };
+// `conflict` is only ever present on a 409 from the offline-sync baseUpdatedAt
+// precondition (see lib/response.ts's conflict()) — the current server doc, so
+// the client can resolve without a second round-trip.
+export type ApiResponse<T> = { success: true; data: T } | { success: false; error: string; conflict?: unknown };
 
 // --- lib/env.ts ---
 export type AppEnv = "local" | "staging" | "production";
@@ -34,6 +37,57 @@ export type PermissionAction = PermissionModule["actions"][number];
 
 // --- hooks/useCurrentUser.ts ---
 export type CurrentUser = { email: string | null; role: string | null; permissions: string[]; loading: boolean };
+
+// --- lib/offline/db.ts ---
+// Every offline-cached resource — each is a single Dexie row (key "data") holding
+// the last-known-good snapshot (a list for most resources, a single object for
+// "settings"). Whole-snapshot replace, not delta sync (see lib/offline/cache.ts).
+export type OfflineResource = "invoices" | "clients" | "groups" | "payments" | "roles" | "users" | "settings";
+export type CacheRow<T> = { key: "data"; data: T; cachedAt: string };
+
+// --- hooks/useOfflineResource.ts ---
+export type OfflineResourceState<T> = { data: T; loading: boolean; error: string | null; refresh: () => Promise<void> };
+
+// --- lib/offline/queue.ts / mutate.ts / syncEngine.ts ---
+// Only resources with a real `_id` + `updatedAt` and no computed/aggregate read
+// shape get the full write-queue + conflict-detection treatment. "groups" is
+// deliberately excluded: its list endpoint returns a computed aggregate
+// ({name, members, memberCount, outstanding}), not the raw Group document, so
+// there's no clean optimistic-cache shape to queue against — group edits stay
+// online-only, same as roles/users (see references/offline.md).
+export type OfflineWritableResource = "clients" | "payments" | "invoices" | "settings";
+
+export type QueuedOpType = "create" | "update" | "delete";
+export type QueuedOpStatus = "pending" | "inflight" | "conflict" | "failed";
+
+export type QueuedOp = {
+  opId: string;
+  seq: number;
+  resource: OfflineWritableResource;
+  opType: QueuedOpType;
+  targetId: string;
+  payload: Record<string, unknown>;
+  baseUpdatedAt: string | null;
+  status: QueuedOpStatus;
+  serverVersion: Record<string, unknown> | null;
+  attempts: number;
+  lastError: string | null;
+  createdAt: string;
+};
+
+export type ConflictRecord = QueuedOp & { status: "conflict"; serverVersion: Record<string, unknown> };
+
+export type SyncStatus = { pendingCount: number; conflictCount: number; failedCount: number; syncing: boolean };
+
+// --- lib/offline/mutate.ts ---
+// The shape every services/{name}.service.ts write-capable service already has —
+// used generically so offlineCreate/offlineUpdate/offlineDelete don't need a
+// bespoke wrapper per resource.
+export type WritableService<T> = {
+  create: (data: Partial<T> & Record<string, unknown>) => Promise<T>;
+  update: (id: string, data: Partial<T> & Record<string, unknown>) => Promise<T>;
+  remove: (id: string) => Promise<unknown>;
+};
 
 // --- app/api/backup/route.ts ---
 // A full, application-level export of every collection — used for the "Download
@@ -108,6 +162,12 @@ export type Client = {
   state?: string;
   pincode?: string;
   mobile?: string;
+  // Already serialized by every route today (Mongoose's default toJSON/lean()
+  // keep timestamps) — exposed here because offline sync's conflict detection
+  // needs it. __offlinePending is cache-only: never sent to/from the server,
+  // set locally on an optimistic row queued while offline.
+  updatedAt?: string;
+  __offlinePending?: boolean;
 };
 
 export type InvoiceItem = {
@@ -128,6 +188,12 @@ export type Invoice = {
   paidAmount: number;
   status: "Unpaid" | "Partial" | "Paid";
   paymentType: "credit" | "cash";
+  updatedAt?: string;
+  // Cache-only: set on an invoice created/edited offline, whose real
+  // invoiceNumber can't be assigned until the atomic counter is reached during
+  // sync (see references/offline.md's "pending sync" flow). Never sent to the
+  // server, never true on anything that ever touched the API.
+  __offlinePending?: boolean;
 };
 
 export type Payment = {
@@ -140,6 +206,8 @@ export type Payment = {
   mode: "Cash" | "Bank";
   reference?: string;
   notes?: string;
+  updatedAt?: string;
+  __offlinePending?: boolean;
 };
 
 export type Group = {
@@ -182,4 +250,6 @@ export type Settings = {
   signature: string;
   invoiceNumbering: InvoiceNumbering;
   categories: string[];
+  updatedAt?: string;
+  __offlinePending?: boolean;
 };

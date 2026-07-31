@@ -3,8 +3,9 @@ import { connectDB } from "@/lib/mongodb";
 import Payment from "@/models/Payment";
 import { recalcInvoice } from "@/lib/recalcInvoice";
 import { requirePermission } from "@/lib/requireAuth";
-import { ok, fail } from "@/lib/response";
+import { ok, fail, conflict } from "@/lib/response";
 import { isObjectId, isPositiveNumber, isValidDateStr } from "@/lib/validators";
+import { updatedAtMismatch } from "@/lib/conflictCheck";
 import type { RouteParams } from "@/lib/types";
 
 type Params = RouteParams;
@@ -22,6 +23,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
   await connectDB();
   const payment = await Payment.findById(id);
   if (!payment) return fail("Payment not found", 404);
+  if (updatedAtMismatch(payment, body.baseUpdatedAt)) {
+    return conflict("This payment was changed elsewhere since you last saw it.", payment.toJSON());
+  }
 
   const oldInvoiceId = payment.invoiceId;
   payment.clientId = body.clientId;
@@ -43,10 +47,14 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (!(await requirePermission(req, "payments.delete"))) return fail("Unauthorized", 401);
   const { id } = await params;
   if (!isObjectId(id)) return fail("Invalid payment id", 400);
+  const body = await req.json().catch(() => null);
 
   await connectDB();
   const payment = await Payment.findById(id);
   if (!payment) return fail("Payment not found", 404);
+  if (updatedAtMismatch(payment, body?.baseUpdatedAt)) {
+    return conflict("This payment was changed elsewhere since you last saw it.", payment.toJSON());
+  }
   const invoiceId = payment.invoiceId;
   await payment.deleteOne();
   if (invoiceId) await recalcInvoice(invoiceId);

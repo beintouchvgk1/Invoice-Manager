@@ -5,6 +5,7 @@ import { Toast } from "@/components/Common/Toast";
 import { customerService } from "@/services/customer.service";
 import { invoiceService } from "@/services/invoice.service";
 import { paymentService } from "@/services/payment.service";
+import { offlineCreate, offlineUpdate } from "@/lib/offline/mutate";
 import { fI, td, ost } from "@/lib/calc";
 import type { Client, Invoice, Payment } from "@/lib/types";
 
@@ -65,8 +66,8 @@ export function PaymentModal({
         reference: reference.trim(),
         notes: notes.trim(),
       };
-      if (payment) await paymentService.update(payment._id, payload);
-      else await paymentService.create(payload);
+      if (payment) await offlineUpdate("payments", paymentService, payment._id, payload);
+      else await offlineCreate("payments", paymentService, payload);
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save payment");

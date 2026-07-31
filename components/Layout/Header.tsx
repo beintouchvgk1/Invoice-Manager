@@ -1,6 +1,7 @@
 "use client";
 import { ReactNode } from "react";
 import { useSidebarContext } from "@/components/Layout/SidebarContext";
+import { SyncIndicator } from "@/components/Offline/SyncIndicator";
 
 function MenuIcon() {
   return (
@@ -21,7 +22,8 @@ export function Header({ title, actions }: { title: string; actions?: ReactNode 
         </button>
         <h2 id="ttl">{title}</h2>
       </div>
-      <div id="ta" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      <div id="ta" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+        <SyncIndicator />
         {actions}
       </div>
     </div>

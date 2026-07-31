@@ -11,6 +11,7 @@ import { useCustomers } from "@/hooks/useCustomers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { paymentService } from "@/services/payment.service";
 import { settingsService } from "@/services/settings.service";
+import { offlineDelete } from "@/lib/offline/mutate";
 import { genReceiptPDF } from "@/lib/pdf";
 import { fI, fD } from "@/lib/calc";
 import type { Payment } from "@/lib/types";
@@ -37,7 +38,7 @@ function PaymentsPageInner() {
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this payment?")) return;
-    await paymentService.remove(id);
+    await offlineDelete("payments", paymentService, id);
     refresh();
     refreshInvoices();
   }
@@ -79,7 +80,15 @@ function PaymentsPageInner() {
                     return (
                       <tr key={p._id}>
                         <td>{fD(p.date)}</td>
-                        <td>{p.receiptNumber}</td>
+                        <td>
+                          {p.__offlinePending ? (
+                            <span className="bd bok" title="Made offline — the real receipt number is assigned once this syncs">
+                              Pending Sync
+                            </span>
+                          ) : (
+                            p.receiptNumber
+                          )}
+                        </td>
                         <td>{clientName(paymentClientId(p))}</td>
                         <td>{inv ? inv.invoiceNumber : <span className="bd bok">Advance</span>}</td>
                         <td style={{ textAlign: "right", fontWeight: 700, color: "#059669" }}>Rs. {fI(p.amount)}</td>
@@ -89,7 +98,14 @@ function PaymentsPageInner() {
                         </td>
                         <td>
                           <div className="ac">
-                            <button className="btn sm bs" onClick={() => handlePrintReceipt(p)}>Receipt PDF</button>
+                            <button
+                              className="btn sm bs"
+                              disabled={p.__offlinePending}
+                              title={p.__offlinePending ? "Available once this payment finishes syncing" : undefined}
+                              onClick={() => handlePrintReceipt(p)}
+                            >
+                              Receipt PDF
+                            </button>
                             {can("payments.edit") && (
                               <button className="btn sm bp" onClick={() => setModal({ payment: p })}>Edit</button>
                             )}

@@ -8,6 +8,7 @@ import { useInvoices } from "@/hooks/useInvoices";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { invoiceService } from "@/services/invoice.service";
+import { offlineDelete } from "@/lib/offline/mutate";
 import type { Invoice } from "@/lib/types";
 
 export default function InvoicesPage() {
@@ -19,7 +20,7 @@ export default function InvoicesPage() {
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this invoice? Payments against it will be kept as advance payments.")) return;
-    await invoiceService.remove(id);
+    await offlineDelete("invoices", invoiceService, id);
     refresh();
   }
 

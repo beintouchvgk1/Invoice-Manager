@@ -43,9 +43,19 @@ export function InvoiceTable({
           {rows.length ? (
             rows.map((inv) => {
               const overdue = ost(inv) > 0 && ageD(inv.date) > 30;
+              const pending = !!inv.__offlinePending;
               return (
                 <tr key={inv._id} style={overdue ? { background: "#fef2f2" } : undefined}>
-                  <td>{inv.invoiceNumber}{overdue && <> <span className="bd bun">{ageD(inv.date)}d</span></>}</td>
+                  <td>
+                    {pending ? (
+                      <span className="bd bok" title="Made offline — the real invoice number is assigned once this syncs">
+                        Pending Sync
+                      </span>
+                    ) : (
+                      inv.invoiceNumber
+                    )}
+                    {overdue && <> <span className="bd bun">{ageD(inv.date)}d</span></>}
+                  </td>
                   <td>{fD(inv.date)}</td>
                   <td>{clientName(inv.clientId)}</td>
                   <td>Rs. {fI(inv.total)}</td>
@@ -53,11 +63,25 @@ export function InvoiceTable({
                   <td><span style={{ fontSize: 11, color: "#64748b" }}>{inv.paymentType === "cash" ? "Cash" : "Credit"}</span></td>
                   <td>
                     <div className="ac">
-                      <button className="btn sm bs" onClick={() => onPrint(inv)}>PDF</button>
+                      <button
+                        className="btn sm bs"
+                        disabled={pending}
+                        title={pending ? "Available once this invoice finishes syncing" : undefined}
+                        onClick={() => onPrint(inv)}
+                      >
+                        PDF
+                      </button>
                       {canEdit && (
-                        <button className="btn sm bp" onClick={() => router.push(`/invoices/${inv._id}/edit`)}>Edit</button>
+                        <button
+                          className="btn sm bp"
+                          disabled={pending}
+                          title={pending ? "Available once this invoice finishes syncing" : undefined}
+                          onClick={() => router.push(`/invoices/${inv._id}/edit`)}
+                        >
+                          Edit
+                        </button>
                       )}
-                      {canEdit && inv.paymentType !== "cash" && inv.status !== "Paid" && (
+                      {canEdit && !pending && inv.paymentType !== "cash" && inv.status !== "Paid" && (
                         <button
                           className="btn sm"
                           style={{ background: "#ecfdf5", color: "#059669", fontWeight: 700 }}

@@ -11,6 +11,10 @@ export const ClientSchema = new Schema(
     state: { type: String, default: "" },
     pincode: { type: String, default: "" },
     mobile: { type: String, default: "" },
+    // Set by an offline-queued create on replay so a retried sync (e.g. the
+    // response was lost after the server actually committed) can't double-create
+    // the record — see lib/offline/mutate.ts and app/api/clients/route.ts's POST.
+    clientOpId: { type: String, default: null, unique: true, sparse: true },
   },
   { timestamps: true }
 );

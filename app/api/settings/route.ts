@@ -2,7 +2,8 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Settings from "@/models/Settings";
 import { requirePermission } from "@/lib/requireAuth";
-import { ok, fail } from "@/lib/response";
+import { ok, fail, conflict } from "@/lib/response";
+import { updatedAtMismatch } from "@/lib/conflictCheck";
 
 export async function GET(req: NextRequest) {
   if (!(await requirePermission(req, "settings.view"))) return fail("Unauthorized", 401);
@@ -20,6 +21,9 @@ export async function PUT(req: NextRequest) {
   await connectDB();
   let settings = await Settings.findOne();
   if (!settings) settings = new Settings({});
+  else if (updatedAtMismatch(settings, body.baseUpdatedAt)) {
+    return conflict("Settings were changed elsewhere since you last saw them.", settings.toJSON());
+  }
 
   const firm = body.firmDetails || {};
   settings.firmDetails.name = firm.name?.trim() || settings.firmDetails.name;

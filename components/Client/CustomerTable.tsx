@@ -64,6 +64,12 @@ export function CustomerTable({
                 <tr key={c._id} style={isOverdue ? { background: "#fef2f2" } : undefined}>
                   <td>
                     <strong>{c.name}</strong>
+                    {c.__offlinePending && (
+                      <>
+                        {" "}
+                        <span className="bd bok" title="Made offline — will sync once you're back online">Pending Sync</span>
+                      </>
+                    )}
                     {c.groupName && (
                       <>
                         {" "}

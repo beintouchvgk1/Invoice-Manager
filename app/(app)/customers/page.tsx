@@ -11,6 +11,7 @@ import { useInvoices } from "@/hooks/useInvoices";
 import { usePayments } from "@/hooks/usePayments";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { customerService } from "@/services/customer.service";
+import { offlineDelete } from "@/lib/offline/mutate";
 import type { Client } from "@/lib/types";
 
 export default function CustomersPage() {
@@ -24,7 +25,7 @@ export default function CustomersPage() {
 
   async function handleDelete(client: Client) {
     if (!confirm("Delete this client?")) return;
-    await customerService.remove(client._id);
+    await offlineDelete("clients", customerService, client._id);
     refresh();
   }
 

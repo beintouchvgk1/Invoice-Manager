@@ -88,6 +88,7 @@ body {
 }
 #sb.collapsed .br1 { padding: 20px 0; justify-content: center; }
 .br1 .logo-badge {
+  position: relative;
   width: 34px;
   height: 34px;
   min-width: 34px;
@@ -103,6 +104,24 @@ body {
 }
 .br1 h1 { color: #fff; font-size: 13px; font-weight: 600; line-height: 1.3; }
 .br1 p { color: var(--sidebar-text-dim); font-size: 10.5px; margin-top: 2px; }
+
+/* Online/offline indicator — a small dot overlaid on the logo corner, in the
+   same spot regardless of rail-collapsed state, so it never adds a line to
+   the brand text block (which stays exactly "Invoice Manager" / "V G K & CO
+   · Surat", two lines, as before). Reuses hooks/useOnlineStatus.ts, the same
+   connectivity signal the offline banner/sync indicator already use. Hover
+   for a tooltip with the exact status. */
+.logo-badge .conn-dot {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--success);
+  border: 2px solid var(--sidebar-bg);
+}
+.logo-badge .conn-dot.offline { background: var(--text-dim); }
 #sb nav { padding: 10px 10px; display: flex; flex-direction: column; gap: 2px; overflow-x: hidden; }
 #sb nav a {
   display: flex;
@@ -225,6 +244,34 @@ body {
 
 /* ---------- Shell ---------- */
 #mn { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.offline-banner {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border-bottom: 1px solid var(--warning-border);
+  padding: 8px 26px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  flex: none;
+}
+
+.sync-indicator {
+  padding: 5px 11px;
+  border-radius: var(--radius-md);
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--bg-body);
+  color: var(--text-muted);
+  cursor: default;
+}
+.sync-indicator.has-issues {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger-border);
+  cursor: pointer;
+}
+.sync-indicator:disabled { cursor: default; }
 #tb {
   background: var(--surface);
   border-bottom: 1px solid var(--border);

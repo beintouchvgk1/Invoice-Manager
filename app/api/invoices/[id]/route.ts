@@ -3,8 +3,9 @@ import { connectDB } from "@/lib/mongodb";
 import Invoice from "@/models/Invoice";
 import Payment from "@/models/Payment";
 import { requirePermission } from "@/lib/requireAuth";
-import { ok, fail } from "@/lib/response";
+import { ok, fail, conflict } from "@/lib/response";
 import { isObjectId, isValidDateStr, validateInvoiceItems } from "@/lib/validators";
+import { updatedAtMismatch } from "@/lib/conflictCheck";
 import type { RouteParams } from "@/lib/types";
 
 type Params = RouteParams;
@@ -31,6 +32,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
   await connectDB();
   const existing = await Invoice.findById(id);
   if (!existing) return fail("Invoice not found", 404);
+  if (updatedAtMismatch(existing, body.baseUpdatedAt)) {
+    return conflict("This invoice was changed elsewhere since you last saw it.", existing.toJSON());
+  }
 
   const items = body.items
     .map((i: { category?: string; description?: string; detail?: string; amount: number }) => ({
@@ -69,10 +73,14 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (!(await requirePermission(req, "invoices.delete"))) return fail("Unauthorized", 401);
   const { id } = await params;
   if (!isObjectId(id)) return fail("Invalid invoice id", 400);
+  const body = await req.json().catch(() => null);
 
   await connectDB();
   const invoice = await Invoice.findById(id);
   if (!invoice) return fail("Invoice not found", 404);
+  if (updatedAtMismatch(invoice, body?.baseUpdatedAt)) {
+    return conflict("This invoice was changed elsewhere since you last saw it.", invoice.toJSON());
+  }
 
   // Preserve payments already recorded against this invoice as client advances,
   // matching the original app's delete behavior.

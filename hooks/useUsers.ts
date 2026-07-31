@@ -1,28 +1,11 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import { userService } from "@/services/user.service";
+import { useOfflineResource } from "@/hooks/useOfflineResource";
 import type { User } from "@/lib/types";
 
 export function useUsers() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setUsers(await userService.list());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load users");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
-
-  return { users, loading, error, refresh };
+  const fetcher = useCallback(() => userService.list(), []);
+  const { data, loading, error, refresh } = useOfflineResource<User[]>("users", fetcher, []);
+  return { users: data, loading, error, refresh };
 }

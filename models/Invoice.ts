@@ -21,6 +21,10 @@ export const InvoiceSchema = new Schema(
     paidAmount: { type: Number, default: 0 },
     status: { type: String, enum: ["Unpaid", "Partial", "Paid"], default: "Unpaid" },
     paymentType: { type: String, enum: ["credit", "cash"], default: "credit" },
+    // See models/Client.ts's clientOpId — same idempotent-replay guard, doubly
+    // important here since a duplicate create would also burn an extra invoice
+    // number from the atomic counter.
+    clientOpId: { type: String, default: null, unique: true, sparse: true },
   },
   { timestamps: true }
 );

@@ -4,6 +4,7 @@ import { Modal } from "@/components/Common/Modal";
 import { Toast } from "@/components/Common/Toast";
 import { groupService } from "@/services/group.service";
 import { customerService } from "@/services/customer.service";
+import { offlineCreate, offlineUpdate } from "@/lib/offline/mutate";
 import type { Client } from "@/lib/types";
 
 export function CustomerModal({
@@ -48,8 +49,8 @@ export function CustomerModal({
         pincode: pincode.trim(),
         mobile: mobile.trim(),
       };
-      if (client) await customerService.update(client._id, payload);
-      else await customerService.create(payload);
+      if (client) await offlineUpdate("clients", customerService, client._id, payload);
+      else await offlineCreate("clients", customerService, payload);
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save client");

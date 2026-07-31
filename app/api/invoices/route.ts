@@ -5,7 +5,7 @@ import Payment from "@/models/Payment";
 import Settings from "@/models/Settings";
 import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
-import { isObjectId, isValidDateStr, validateInvoiceItems } from "@/lib/validators";
+import { isNonEmptyString, isObjectId, isValidDateStr, validateInvoiceItems } from "@/lib/validators";
 import { formatInvoiceNo, formatReceiptNo } from "@/lib/invoiceNumber";
 
 export async function GET(req: NextRequest) {
@@ -25,6 +25,15 @@ export async function POST(req: NextRequest) {
   if (!validateInvoiceItems(body.items)) return fail("Add at least one valid service item", 400);
 
   await connectDB();
+
+  // Idempotent replay guard — checked BEFORE claiming a counter value, so a
+  // retried sync of an already-committed create never burns a second invoice
+  // number (the one irreversible cost a naive retry could otherwise cause).
+  if (isNonEmptyString(body.clientOpId)) {
+    const existing = await Invoice.findOne({ clientOpId: body.clientOpId });
+    if (existing) return ok(existing, 200);
+  }
+
   const items = body.items
     .map((i: { category?: string; description?: string; detail?: string; amount: number }) => ({
       category: i.category || "",
@@ -69,6 +78,7 @@ export async function POST(req: NextRequest) {
       paidAmount,
       status,
       paymentType,
+      clientOpId: isNonEmptyString(body.clientOpId) ? body.clientOpId : undefined,
     });
 
     if (paymentType === "cash") {
@@ -93,6 +103,10 @@ export async function POST(req: NextRequest) {
     return ok(invoice, 201);
   } catch (err) {
     if (err && typeof err === "object" && "code" in err && err.code === 11000) {
+      if (isNonEmptyString(body.clientOpId)) {
+        const winner = await Invoice.findOne({ clientOpId: body.clientOpId });
+        if (winner) return ok(winner, 200);
+      }
       return fail("That invoice number was just taken by another request. Please try saving again.", 409);
     }
     console.error("POST /api/invoices failed:", err);

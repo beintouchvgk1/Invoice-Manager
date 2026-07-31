@@ -5,6 +5,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { useSidebarContext } from "@/components/Layout/SidebarContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { wipeOfflineCache } from "@/lib/offline/db";
 
 function Icon({ path }: { path: string }) {
   return (
@@ -62,6 +64,7 @@ export function Sidebar() {
   const [isMobile, setIsMobile] = useState(false);
   const { mobileOpen, closeMobile } = useSidebarContext();
   const { email, role, can } = useCurrentUser();
+  const online = useOnlineStatus();
   const nav = NAV.filter((item) => can(item.perm));
 
   useEffect(() => {
@@ -87,6 +90,7 @@ export function Sidebar() {
 
   async function handleLogout() {
     await authService.logout().catch(() => {});
+    await wipeOfflineCache().catch(() => {});
     router.push("/login");
     router.refresh();
   }
@@ -103,9 +107,12 @@ export function Sidebar() {
       />
       <div id="sb" className={[railCollapsed ? "collapsed" : "", isMobile && mobileOpen ? "mobile-open" : ""].filter(Boolean).join(" ")}>
         <div className="br1">
-          <div className="logo-badge">VGK</div>
+          <div className="logo-badge">
+            VGK
+            <span className={`conn-dot${online ? "" : " offline"}`} title={online ? "Online" : "Offline"} />
+          </div>
           {!railCollapsed && (
-            <div>
+            <div style={{ minWidth: 0 }}>
               <h1>Invoice Manager</h1>
               <p>V G K &amp; CO &middot; Surat</p>
             </div>
