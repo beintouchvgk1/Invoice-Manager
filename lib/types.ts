@@ -42,8 +42,14 @@ export type CurrentUser = { email: string | null; role: string | null; permissio
 // Every offline-cached resource — each is a single Dexie row (key "data") holding
 // the last-known-good snapshot (a list for most resources, a single object for
 // "settings"). Whole-snapshot replace, not delta sync (see lib/offline/cache.ts).
-export type OfflineResource = "invoices" | "clients" | "groups" | "payments" | "roles" | "users" | "settings";
+export type OfflineResource = "invoices" | "clients" | "groups" | "payments" | "roles" | "users" | "settings" | "currentUser";
 export type CacheRow<T> = { key: "data"; data: T; cachedAt: string };
+
+// --- hooks/useCurrentUser.ts ---
+// Cached alongside the other offline resources so a cold load with no network
+// (a fresh tab/device that was logged in before) still knows who's logged in
+// and what they can do, instead of silently looking logged-out.
+export type CachedCurrentUser = { email: string; role: string; permissions: string[] };
 
 // --- hooks/useOfflineResource.ts ---
 export type OfflineResourceState<T> = { data: T; loading: boolean; error: string | null; refresh: () => Promise<void> };

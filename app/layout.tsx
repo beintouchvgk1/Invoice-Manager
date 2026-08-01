@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ToastProvider } from "@/components/Common/ToastProvider";
+import { ServiceWorkerRegister } from "@/components/Offline/ServiceWorkerRegister";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
@@ -13,6 +14,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className={inter.variable}>
       <body>
+        <ServiceWorkerRegister />
         <ToastProvider>{children}</ToastProvider>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img id="logo" src="/images/logo.png" style={{ display: "none" }} alt="" />

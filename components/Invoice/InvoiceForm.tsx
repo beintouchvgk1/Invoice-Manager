@@ -4,9 +4,7 @@ import { useRouter } from "next/navigation";
 import { Toast } from "@/components/Common/Toast";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useSettings } from "@/hooks/useSettings";
-import { customerService } from "@/services/customer.service";
 import { invoiceService } from "@/services/invoice.service";
-import { settingsService } from "@/services/settings.service";
 import { offlineCreate, offlineUpdate } from "@/lib/offline/mutate";
 import { genInvoicePDF } from "@/lib/pdf";
 import { fI, td } from "@/lib/calc";
@@ -86,12 +84,9 @@ export function InvoiceForm({ invoice }: { invoice?: Invoice }) {
       // PDF with a placeholder number would be a real GST/audit problem, so
       // this is skipped rather than faked. The "Pending Sync" badge on the
       // invoice list is the user's signal to come back and print once synced.
-      if (print && !saved.__offlinePending) {
-        const [client, latestSettings] = await Promise.all([
-          customerService.list().then((all) => all.find((c) => c._id === clientId)),
-          settingsService.get(),
-        ]);
-        genInvoicePDF(saved, client, latestSettings);
+      if (print && !saved.__offlinePending && settings) {
+        const client = customers.find((c) => c._id === clientId);
+        genInvoicePDF(saved, client, settings);
       }
 
       router.push("/invoices");

@@ -1,10 +1,12 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Modal } from "@/components/Common/Modal";
 import { ConfirmModal } from "@/components/Common/ConfirmModal";
 import { Toast } from "@/components/Common/Toast";
 import { customerService } from "@/services/customer.service";
 import { groupService } from "@/services/group.service";
+import { useCustomers } from "@/hooks/useCustomers";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 import type { Client } from "@/lib/types";
 
 export function GroupModal({
@@ -17,22 +19,20 @@ export function GroupModal({
   onSaved: () => void;
 }) {
   const [name, setName] = useState(groupName || "");
-  const [clients, setClients] = useState<Client[]>([]);
+  // Used to fetch customerService.list() directly, which came up empty
+  // offline (same bug as PaymentModal/CustomerModal) — useCustomers() is
+  // cache-first. Group membership edits still require being online (Groups
+  // have no write queue — see references/offline.md), but at least the
+  // modal now shows real members/candidates instead of an empty list.
+  const { customers: clients, refresh: refreshClients } = useCustomers();
+  const online = useOnlineStatus();
   const [addSel, setAddSel] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  useEffect(() => {
-    customerService.list().then(setClients).catch(() => {});
-  }, []);
-
   const members = clients.filter((c) => c.groupName === groupName);
   const others = clients.filter((c) => c.groupName !== groupName);
-
-  async function refreshClients() {
-    setClients(await customerService.list());
-  }
 
   async function addMember() {
     if (!addSel) return;
@@ -97,8 +97,9 @@ export function GroupModal({
                     {c.name}
                     <button
                       onClick={() => removeMember(c)}
-                      style={{ float: "right", background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: 14 }}
-                      title="Remove from group"
+                      disabled={!online}
+                      style={{ float: "right", background: "none", border: "none", color: "#dc2626", cursor: online ? "pointer" : "default", fontSize: 14, opacity: online ? 1 : 0.4 }}
+                      title={online ? "Remove from group" : "Group membership can only be changed online"}
                     >
                       ×
                     </button>
@@ -120,7 +121,15 @@ export function GroupModal({
                 <option key={c._id} value={c._id}>{c.name}{c.groupName ? ` (currently: ${c.groupName})` : ""}</option>
               ))}
             </select>
-            <button className="btn bg sm" type="button" onClick={addMember}>Add to Group</button>
+            <button
+              className="btn bg sm"
+              type="button"
+              disabled={!online}
+              title={online ? undefined : "Group membership can only be changed online"}
+              onClick={addMember}
+            >
+              Add to Group
+            </button>
           </div>
         </>
       )}

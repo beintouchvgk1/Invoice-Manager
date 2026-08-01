@@ -1,13 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { Modal } from "@/components/Common/Modal";
 import { Toast } from "@/components/Common/Toast";
-import { customerService } from "@/services/customer.service";
-import { invoiceService } from "@/services/invoice.service";
 import { paymentService } from "@/services/payment.service";
 import { offlineCreate, offlineUpdate } from "@/lib/offline/mutate";
+import { useCustomers } from "@/hooks/useCustomers";
+import { useInvoices } from "@/hooks/useInvoices";
 import { fI, td, ost } from "@/lib/calc";
-import type { Client, Invoice, Payment } from "@/lib/types";
+import type { Payment } from "@/lib/types";
 
 export function PaymentModal({
   payment,
@@ -26,8 +26,6 @@ export function PaymentModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [clientId, setClientId] = useState(payment?.clientId || presetClientId || "");
   const [invoiceId, setInvoiceId] = useState(payment?.invoiceId || presetInvoiceId || "");
   const [date, setDate] = useState(payment?.date || td());
@@ -38,20 +36,38 @@ export function PaymentModal({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    customerService.list().then(setClients).catch(() => {});
-  }, []);
+  // Both dropdowns used to fetch directly (customerService.list() /
+  // invoiceService.list(clientId)) instead of going through the cached hooks —
+  // offline, those fetches just failed silently and left both selects empty,
+  // making it impossible to log a payment for anyone but a preset client.
+  // useCustomers()/useInvoices() are cache-first, so they still populate from
+  // the same data every other page already has cached. useInvoices() is
+  // called with no clientId (the full list, same cache entry the Invoices
+  // page uses) and filtered client-side here instead — useOfflineResource
+  // caches by resource name only, so calling it with a clientId would have
+  // overwritten that shared cache with a filtered subset.
+  const { customers: clients } = useCustomers();
+  const { invoices: allInvoices } = useInvoices();
+  const invoices = useMemo(
+    () => allInvoices.filter((i) => i.clientId === clientId && (ost(i) > 0 || String(i._id) === String(invoiceId))),
+    [allInvoices, clientId, invoiceId]
+  );
 
-  useEffect(() => {
-    if (!clientId) {
-      setInvoices([]);
-      return;
-    }
-    invoiceService.list(clientId).then((all) => {
-      setInvoices(all.filter((i) => ost(i) > 0 || String(i._id) === String(invoiceId)));
-    }).catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clientId]);
+  // A <select> whose value matches no <option> silently displays the first one
+  // instead — so a preset client that isn't in the list (its record was deleted,
+  // or this device never cached it) looked like "- Select Client -" with nothing
+  // chosen, and saving then failed with "Select a client" on a locked field the
+  // user couldn't even change. Keep the real selection visible and submittable.
+  const clientOptions = useMemo(() => {
+    if (!clientId || clients.some((c) => c._id === clientId)) return clients;
+    return [{ _id: clientId, name: "(client not available offline)" } as (typeof clients)[number], ...clients];
+  }, [clients, clientId]);
+
+  const invoiceOptions = useMemo(() => {
+    if (!invoiceId || invoices.some((i) => i._id === invoiceId)) return invoices;
+    const known = allInvoices.find((i) => i._id === invoiceId);
+    return known ? [known, ...invoices] : invoices;
+  }, [invoices, allInvoices, invoiceId]);
 
   async function handleSave() {
     setError("");
@@ -93,7 +109,7 @@ export function PaymentModal({
             onChange={(e) => { setClientId(e.target.value); setInvoiceId(""); }}
           >
             <option value="">- Select Client -</option>
-            {clients.map((c) => (
+            {clientOptions.map((c) => (
               <option key={c._id} value={c._id}>{c.name}</option>
             ))}
           </select>
@@ -102,8 +118,10 @@ export function PaymentModal({
           <label>Against Invoice</label>
           <select value={invoiceId} disabled={locked} onChange={(e) => setInvoiceId(e.target.value)}>
             <option value="">Advance Payment (No Invoice)</option>
-            {invoices.map((i) => (
-              <option key={i._id} value={i._id}>{i.invoiceNumber} — Rs. {fI(ost(i))} outstanding</option>
+            {invoiceOptions.map((i) => (
+              <option key={i._id} value={i._id}>
+                {i.invoiceNumber || "Pending Sync"} — Rs. {fI(ost(i))} outstanding
+              </option>
             ))}
           </select>
         </div>

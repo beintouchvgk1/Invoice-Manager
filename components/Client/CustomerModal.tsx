@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Modal } from "@/components/Common/Modal";
 import { Toast } from "@/components/Common/Toast";
-import { groupService } from "@/services/group.service";
 import { customerService } from "@/services/customer.service";
 import { offlineCreate, offlineUpdate } from "@/lib/offline/mutate";
+import { useGroups } from "@/hooks/useGroups";
 import { isValidPhone } from "@/lib/validators";
 import type { Client } from "@/lib/types";
 
@@ -17,7 +17,11 @@ export function CustomerModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [groups, setGroups] = useState<string[]>([]);
+  // Bg: used to fetch groupService.list() directly, which silently came up
+  // empty offline (same cache-bypass issue as PaymentModal) — useGroups() is
+  // cache-first, same "groups" entry the Groups page already relies on.
+  const { groups: groupRecords } = useGroups();
+  const groups = groupRecords.map((g) => g.name);
   const [name, setName] = useState(client?.name || "");
   const [groupName, setGroupName] = useState(client?.groupName || "");
   const [addressLine1, setAddressLine1] = useState(client?.addressLine1 || "");
@@ -29,10 +33,6 @@ export function CustomerModal({
   const [mobile, setMobile] = useState(client?.mobile || "");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    groupService.list().then((gs) => setGroups(gs.map((g) => g.name))).catch(() => {});
-  }, []);
 
   async function handleSave() {
     setError("");

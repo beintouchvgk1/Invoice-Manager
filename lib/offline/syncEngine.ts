@@ -124,6 +124,28 @@ async function replayOp(op: QueuedOp): Promise<"ok" | "conflict" | "network" | "
   }
 }
 
+// See the call site in runSync(): rescues ops stranded behind a dependency
+// that can no longer succeed, so they surface in the sync report instead of
+// sitting in an invisible "pending" limbo.
+async function failOpsBlockedByDeadDependency(): Promise<void> {
+  const all = await listQueue();
+  const deadTempIds = new Set(
+    all
+      .filter((op) => op.opType === "create" && (op.status === "failed" || op.status === "conflict"))
+      .map((op) => op.targetId)
+  );
+  if (!deadTempIds.size) return;
+
+  for (const op of all.filter((o) => o.status === "pending")) {
+    if (!isBlocked(op, deadTempIds)) continue;
+    await updateOp(op.opId, {
+      status: "failed",
+      lastError: "Depends on another offline change that couldn't be synced. Resolve that one first, then retry this.",
+      attempts: op.attempts + 1,
+    });
+  }
+}
+
 // Runs the whole pending queue in FIFO order. Safe to call repeatedly/
 // concurrently — a module-level flag makes re-entrant calls within one tab a
 // no-op (cross-tab coordination is intentionally out of scope; see
@@ -144,14 +166,27 @@ export async function runSync(): Promise<void> {
       pending.filter((op) => op.opType === "create").map((op) => op.targetId)
     );
 
+    let networkDropped = false;
     for (const op of pending) {
       if (isBlocked(op, stillPendingCreateTempIds)) continue;
 
       const result = await replayOp(op);
       if (result === "ok" && op.opType === "create") stillPendingCreateTempIds.delete(op.targetId);
-      if (result === "network") break; // connection dropped mid-run — stop, resume next trigger
+      if (result === "network") {
+        networkDropped = true;
+        break; // connection dropped mid-run — stop, resume next trigger
+      }
       await emitStatus();
     }
+
+    // An op waiting on another offline create can only ever succeed once that
+    // create does. If the dependency ended in conflict/failed instead, the
+    // dependent would sit at "pending" forever — an unexplained "1 pending
+    // sync" badge that never clears and never appears in the sync report.
+    // Surface it as failed so it shows up with an actionable message. Skipped
+    // when the run was cut short by the connection dropping: those
+    // dependencies are still legitimately pending, just not reached yet.
+    if (!networkDropped) await failOpsBlockedByDeadDependency();
   } finally {
     syncing = false;
     await emitStatus();

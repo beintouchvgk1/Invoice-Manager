@@ -2,6 +2,10 @@ import Dexie, { type Table } from "dexie";
 import type { CacheRow, OfflineResource, QueuedOp } from "@/lib/types";
 
 const RESOURCES: OfflineResource[] = ["invoices", "clients", "groups", "payments", "roles", "users", "settings"];
+// currentUser is cached the same way but deliberately kept out of RESOURCES —
+// it's not something useOfflineResource/the write queue ever touches, it's
+// only ever read/written directly by useCurrentUser.ts.
+const ALL_TABLES: OfflineResource[] = [...RESOURCES, "currentUser"];
 
 class OfflineDB extends Dexie {
   invoices!: Table<CacheRow<unknown>, string>;
@@ -11,6 +15,7 @@ class OfflineDB extends Dexie {
   roles!: Table<CacheRow<unknown>, string>;
   users!: Table<CacheRow<unknown>, string>;
   settings!: Table<CacheRow<unknown>, string>;
+  currentUser!: Table<CacheRow<unknown>, string>;
   queue!: Table<QueuedOp, string>;
 
   constructor() {
@@ -21,6 +26,11 @@ class OfflineDB extends Dexie {
     this.version(1).stores(Object.fromEntries(RESOURCES.map((r) => [r, "key"])));
     this.version(2).stores({
       ...Object.fromEntries(RESOURCES.map((r) => [r, "key"])),
+      queue: "opId, seq, status, resource",
+    });
+    // v2 → v3 adds the currentUser table (cold-offline-load auth fallback).
+    this.version(3).stores({
+      ...Object.fromEntries(ALL_TABLES.map((r) => [r, "key"])),
       queue: "opId, seq, status, resource",
     });
   }
@@ -34,7 +44,19 @@ let instance: OfflineDB | null = null;
 
 export function getOfflineDB(): OfflineDB | null {
   if (typeof window === "undefined") return null;
-  if (!instance) instance = new OfflineDB();
+  if (!instance) {
+    const db = new OfflineDB();
+    // Multi-tab safety. IndexedDB blocks (forever, without erroring) when one
+    // connection is still open and another needs a schema upgrade — with the
+    // app open in two tabs, that froze every list on its loading skeleton.
+    // Closing on `versionchange` lets the upgrading tab through instead of
+    // deadlocking both. The closed tab reopens lazily on its next cache call.
+    db.on("versionchange", () => {
+      db.close();
+      instance = null;
+    });
+    instance = db;
+  }
   return instance;
 }
 

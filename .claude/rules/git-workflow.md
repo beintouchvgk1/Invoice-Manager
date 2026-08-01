@@ -1,16 +1,20 @@
 # Git Workflow Rules
 
-## Push — always confirm first
-Never run `git push` without explicit user confirmation, no matter the phrasing ("deploy", "publish",
-"send it"). Show `git log origin/main..HEAD --oneline` and `git diff origin/main..HEAD --stat` first,
-then ask, then wait for an explicit yes.
+## Never commit or push — this is the owner's job, not Claude's
+The project owner handles all `git commit`/`git push` themselves. **Never run either command, and
+never ask whether to.** Leave changes staged/unstaged in the working tree when a task is done — the
+owner reviews and commits on their own schedule. This holds regardless of phrasing ("save this",
+"deploy", "wrap it up") — none of that means commit or push. The only exception is if the owner gives
+a specific one-off instruction to commit/push in that exact message; even then, don't treat it as
+standing permission for next time.
 
-## Commits
-- Only commit when the user explicitly asks — don't commit proactively after a task.
-- Show `git status` and `git diff --stat` before staging.
-- Stage specific files by name — never `git add -A` / `git add .` without reviewing what's included.
-- Message format: `type: short description` (`feat`, `fix`, `refactor`, `style`, `chore`, `docs`).
-- Never commit `.env` / `.env.local` or anything with the Mongo connection string / JWT secret.
+## Branches
+- Switching branches (`git checkout`/`git switch`) to look at or work on different code is fine —
+  just check `git status` first and don't discard uncommitted changes without confirming.
+- Never force-push without explicit instruction.
+- Never push directly to `main` without asking which branch to target.
+- Never use destructive commands (`reset --hard`, `checkout --`, `clean -f`) without checking
+  `git status` first and confirming nothing uncommitted would be lost.
 
 ## Branches
 - Never force-push without explicit instruction.
