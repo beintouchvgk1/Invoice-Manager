@@ -23,7 +23,7 @@ export function ConnectivityToast() {
       if (online) {
         showToast("Back online — syncing your changes now.", "ok");
       } else {
-        showToast("You're offline — changes will be saved locally until you're back online.");
+        showToast("You're offline — you can keep working. Your changes will sync when you're back online.");
       }
       prevRef.current = online;
     }
