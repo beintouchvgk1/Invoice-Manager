@@ -6,6 +6,8 @@ import { authService } from "@/services/auth.service";
 import { useSidebarContext } from "@/components/Layout/SidebarContext";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useSyncStatus } from "@/hooks/useSyncStatus";
+import { ConfirmModal } from "@/components/Common/ConfirmModal";
 import { wipeOfflineCache } from "@/lib/offline/db";
 
 function Icon({ path }: { path: string }) {
@@ -16,7 +18,14 @@ function Icon({ path }: { path: string }) {
   );
 }
 
-function initialsFromEmail(email: string): string {
+// Bg_26: prefer the user's actual name — initials from "Smit Gajera" read as
+// "SG", which is far more recognizable than initials off an email local-part.
+// Falls back to the email for accounts created before name existed.
+function initialsFor(name: string | null, email: string): string {
+  if (name?.trim()) {
+    const words = name.trim().split(/\s+/);
+    return ((words[0]?.[0] || "") + (words[1]?.[0] || "")).toUpperCase();
+  }
   const local = email.split("@")[0].replace(/[^a-zA-Z]/g, "");
   return (local.slice(0, 2) || "?").toUpperCase();
 }
@@ -63,8 +72,11 @@ export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const { mobileOpen, closeMobile } = useSidebarContext();
-  const { email, role, can } = useCurrentUser();
+  const { name, email, role, can } = useCurrentUser();
   const online = useOnlineStatus();
+  const { pendingCount, conflictCount, failedCount } = useSyncStatus();
+  const unsyncedCount = pendingCount + conflictCount + failedCount;
+  const [showLogoutWarning, setShowLogoutWarning] = useState(false);
   const nav = NAV.filter((item) => can(item.perm));
 
   useEffect(() => {
@@ -88,11 +100,23 @@ export function Sidebar() {
     });
   }
 
-  async function handleLogout() {
+  // Logging out deliberately wipes the offline cache (a stale financial
+  // snapshot must not outlive the session) — but that also destroys anything
+  // still queued and unsynced, permanently and silently. Warn first when
+  // there's unsynced work; with a clean queue this is unchanged from before.
+  async function doLogout() {
     await authService.logout().catch(() => {});
     await wipeOfflineCache().catch(() => {});
     router.push("/login");
     router.refresh();
+  }
+
+  function handleLogout() {
+    if (unsyncedCount > 0) {
+      setShowLogoutWarning(true);
+      return;
+    }
+    void doLogout();
   }
 
   // On mobile the drawer always shows full labels; the rail-collapse preference only applies on desktop.
@@ -147,10 +171,12 @@ export function Sidebar() {
           )}
           {email && (
             <div className="sidebar-user">
-              <div className="sidebar-user-avatar">{initialsFromEmail(email)}</div>
+              <div className="sidebar-user-avatar">{initialsFor(name, email)}</div>
               {!railCollapsed && (
                 <div className="sidebar-user-info">
-                  <div className="sidebar-user-email" title={email}>{email}</div>
+                  {/* Bg_26: show who the person is, not their login address.
+                      Email stays as the tooltip so it's still reachable. */}
+                  <div className="sidebar-user-email" title={email}>{name?.trim() || email}</div>
                   <div className="sidebar-user-role">{role ? humanizeRole(role) : ""}</div>
                 </div>
               )}
@@ -161,6 +187,30 @@ export function Sidebar() {
           )}
         </div>
       </div>
+
+      {/* Only mounted while actually warning — otherwise its message sits in the
+          DOM reading "0 changes", which screen readers would announce. */}
+      {showLogoutWarning && (
+      <ConfirmModal
+        open={showLogoutWarning}
+        title="Unsaved Changes Will Be Lost"
+        message={
+          `You have ${unsyncedCount} change${unsyncedCount === 1 ? "" : "s"} saved on this device that ` +
+          `${unsyncedCount === 1 ? "hasn't" : "haven't"} been sent to the server yet. Logging out erases ` +
+          `${unsyncedCount === 1 ? "it" : "them"} permanently. Reconnect to the internet and let ` +
+          `${unsyncedCount === 1 ? "it" : "them"} finish syncing first if you want to keep ` +
+          `${unsyncedCount === 1 ? "it" : "them"}.`
+        }
+        confirmLabel="Log Out & Discard"
+        cancelLabel="Stay Logged In"
+        destructive
+        onConfirm={() => {
+          setShowLogoutWarning(false);
+          void doLogout();
+        }}
+        onCancel={() => setShowLogoutWarning(false)}
+      />
+      )}
     </>
   );
 }

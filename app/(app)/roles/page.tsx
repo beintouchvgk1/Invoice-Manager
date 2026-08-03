@@ -80,6 +80,7 @@ export default function RolesPage() {
     setBusyRoleId(role._id);
     try {
       await roleService.update(role._id, { isActive: !role.isActive });
+      showToast(role.isActive ? "Role deactivated." : "Role activated.", "ok");
       refresh();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to update role");
@@ -290,6 +291,7 @@ export default function RolesPage() {
           role={editing}
           onClose={() => setEditing(undefined)}
           onSaved={() => {
+            showToast(editing ? "Role updated." : "Role created.", "ok");
             setEditing(undefined);
             refresh();
           }}

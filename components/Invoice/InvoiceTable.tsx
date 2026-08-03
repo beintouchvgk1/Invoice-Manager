@@ -12,6 +12,7 @@ export function InvoiceTable({
   onAddPayment,
   canEdit,
   canDelete,
+  canAddPayment,
 }: {
   invoices: Invoice[];
   clients: Client[];
@@ -20,6 +21,10 @@ export function InvoiceTable({
   onAddPayment: (invoice: Invoice) => void;
   canEdit: boolean;
   canDelete: boolean;
+  // Bg_27: recording a payment needs payments.create, not invoices.edit —
+  // the button used to key off canEdit, so an invoice-only user saw it and
+  // then hit a 401 on submit.
+  canAddPayment: boolean;
 }) {
   const router = useRouter();
   const clientName = (clientId: string) => clients.find((c) => c._id === clientId)?.name || "Unknown";
@@ -81,7 +86,7 @@ export function InvoiceTable({
                           Edit
                         </button>
                       )}
-                      {canEdit && !pending && inv.paymentType !== "cash" && inv.status !== "Paid" && (
+                      {canAddPayment && !pending && inv.paymentType !== "cash" && inv.status !== "Paid" && (
                         <button
                           className="btn sm"
                           style={{ background: "#ecfdf5", color: "#059669", fontWeight: 700 }}

@@ -46,6 +46,15 @@ async function emitStatus(): Promise<void> {
   listeners.forEach((fn) => fn(status));
 }
 
+// Queuing an offline change writes straight to Dexie, which nothing observes —
+// so until this existed, the "N pending sync" badge (and anything else built on
+// useSyncStatus, like the unsynced-work guard on logout) stayed stale until the
+// next sync run or the 30s heartbeat happened to fire. lib/offline/mutate.ts
+// calls this right after it touches the queue so the UI reflects it instantly.
+export async function refreshSyncStatus(): Promise<void> {
+  await emitStatus();
+}
+
 export function subscribeSyncStatus(fn: SyncListener): () => void {
   listeners.add(fn);
   currentStatus().then(fn);

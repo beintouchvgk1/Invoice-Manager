@@ -24,7 +24,8 @@ export const InvoiceSchema = new Schema(
     // See models/Client.ts's clientOpId — same idempotent-replay guard, doubly
     // important here since a duplicate create would also burn an extra invoice
     // number from the atomic counter.
-    clientOpId: { type: String, default: null, unique: true, sparse: true },
+    // No default — see models/Client.ts for why `default: null` breaks sparse.
+    clientOpId: { type: String, unique: true, sparse: true },
   },
   { timestamps: true }
 );

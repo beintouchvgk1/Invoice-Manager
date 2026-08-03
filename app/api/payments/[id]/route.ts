@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import Payment from "@/models/Payment";
 import { recalcInvoice } from "@/lib/recalcInvoice";
+import { reallocateClientAdvances } from "@/lib/allocateAdvances";
 import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail, conflict } from "@/lib/response";
 import { isObjectId, isPositiveNumber, isValidDateStr } from "@/lib/validators";
@@ -28,6 +29,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   }
 
   const oldInvoiceId = payment.invoiceId;
+  const oldClientId = payment.clientId;
   payment.clientId = body.clientId;
   payment.invoiceId = body.invoiceId || null;
   payment.date = body.date;
@@ -39,6 +41,12 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
   if (oldInvoiceId && String(oldInvoiceId) !== String(payment.invoiceId)) await recalcInvoice(oldInvoiceId);
   if (payment.invoiceId) await recalcInvoice(payment.invoiceId);
+  // Bg_23: re-settle both accounts — moving a payment to another client frees
+  // advance credit on the old one and consumes it on the new one.
+  if (oldClientId && String(oldClientId) !== String(payment.clientId)) {
+    await reallocateClientAdvances(oldClientId);
+  }
+  await reallocateClientAdvances(payment.clientId);
 
   return ok(payment);
 }
@@ -56,8 +64,12 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     return conflict("This payment was changed elsewhere since you last saw it.", payment.toJSON());
   }
   const invoiceId = payment.invoiceId;
+  const clientId = payment.clientId;
   await payment.deleteOne();
   if (invoiceId) await recalcInvoice(invoiceId);
+  // Bg_23: removing a payment gives back whatever advance credit it provided,
+  // so the client's invoices have to be settled again from what's left.
+  await reallocateClientAdvances(clientId);
 
   return ok({ deleted: true });
 }

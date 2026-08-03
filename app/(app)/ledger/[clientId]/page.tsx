@@ -7,6 +7,7 @@ import { PaymentModal } from "@/components/Payment/PaymentModal";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useInvoices } from "@/hooks/useInvoices";
 import { usePayments } from "@/hooks/usePayments";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { settingsService } from "@/services/settings.service";
 import { genLedgerPDF } from "@/lib/pdf";
 import { fI, fD } from "@/lib/calc";
@@ -18,6 +19,7 @@ export default function LedgerPage({ params }: RouteParams<"clientId">) {
   const { customers, loading: loadingClients } = useCustomers();
   const { invoices, refresh: refreshInvoices } = useInvoices();
   const { payments, refresh: refreshPayments } = usePayments();
+  const { can } = useCurrentUser();
   const [addingPayment, setAddingPayment] = useState(false);
 
   const client = customers.find((c) => c._id === clientId);
@@ -79,7 +81,9 @@ export default function LedgerPage({ params }: RouteParams<"clientId">) {
             {client && (
               <>
                 <button className="btn bp sm" onClick={handlePrintLedger}>Print Ledger PDF</button>
-                <button className="btn bg sm" onClick={() => setAddingPayment(true)}>+ Add Payment</button>
+                {can("payments.create") && (
+                  <button className="btn bg sm" onClick={() => setAddingPayment(true)}>+ Add Payment</button>
+                )}
               </>
             )}
           </>

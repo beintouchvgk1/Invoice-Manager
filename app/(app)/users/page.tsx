@@ -27,7 +27,16 @@ export default function UsersPage() {
   // Bg_14: an inactive role shouldn't be assignable to a new/edited user — but if the
   // user being edited already holds one (assigned before it was deactivated), keep it
   // in the list so their current role still displays instead of silently vanishing.
-  const pickableRoles = assignableRoles.filter((r) => r.isActive || r._id === editing?.roleId._id);
+  // Bg_25: a role with no permissions assigned grants access to nothing, so
+  // offering it just creates a user who can't do anything. super_admin is
+  // exempt — it stores an empty array but implicitly holds every permission
+  // (see lib/permissionSeeder.ts). The currently-assigned role always stays
+  // listed, same reasoning as the inactive-role case above.
+  const pickableRoles = assignableRoles.filter(
+    (r) =>
+      (r.isActive || r._id === editing?.roleId._id) &&
+      (r.name === ROLES.SUPER_ADMIN || r.permissions.length > 0 || r._id === editing?.roleId._id)
+  );
   const [busyId, setBusyId] = useState<string | null>(null);
   const { search, setSearch, page, setPage, limit, setLimit, paged, total, totalPages } = useListControls(
     users,
@@ -38,6 +47,7 @@ export default function UsersPage() {
     setBusyId(user._id);
     try {
       await userService.update(user._id, { isActive: !user.isActive });
+      showToast(user.isActive ? "User deactivated." : "User activated.", "ok");
       refresh();
     } catch (err) {
       showToast(err instanceof Error ? err.message : "Failed to update user");
@@ -127,6 +137,7 @@ export default function UsersPage() {
           roles={pickableRoles}
           onClose={() => setEditing(undefined)}
           onSaved={() => {
+            showToast(editing ? "User updated." : "User created.", "ok");
             setEditing(undefined);
             refresh();
           }}

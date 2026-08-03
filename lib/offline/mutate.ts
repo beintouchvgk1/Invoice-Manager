@@ -1,7 +1,31 @@
 import { NetworkError } from "@/services/http";
 import { notifyResourceUpdated, patchCache, readCache, writeCache } from "./cache";
-import { enqueueOp, findPendingOpByTarget, removeOp, updateOp } from "./queue";
+import {
+  enqueueOp as enqueueOpRaw,
+  findPendingOpByTarget,
+  removeOp as removeOpRaw,
+  updateOp as updateOpRaw,
+} from "./queue";
+import { refreshSyncStatus } from "./syncEngine";
 import type { OfflineWritableResource, Settings, WritableService } from "@/lib/types";
+
+// Every queue write in this file goes through these thin wrappers so anything
+// watching useSyncStatus() — the "N pending sync" badge, the unsynced-work
+// guard on logout — updates the moment a change is queued. Writing to Dexie
+// directly notifies nobody, so those used to sit stale until the next sync run
+// or the 30-second heartbeat, which made the logout guard miss recent work.
+const enqueueOp: typeof enqueueOpRaw = async (op) => {
+  await enqueueOpRaw(op);
+  await refreshSyncStatus();
+};
+const removeOp: typeof removeOpRaw = async (opId) => {
+  await removeOpRaw(opId);
+  await refreshSyncStatus();
+};
+const updateOp: typeof updateOpRaw = async (opId, patch) => {
+  await updateOpRaw(opId, patch);
+  await refreshSyncStatus();
+};
 
 type Row = { _id: string; updatedAt?: string; __offlinePending?: boolean };
 

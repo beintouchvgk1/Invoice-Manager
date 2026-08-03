@@ -37,6 +37,8 @@ export function UserModal({
 
   async function handleSave() {
     setError("");
+    // Bg_26: name was optional, so users showed up identified only by email.
+    if (!name.trim()) return setError("Name is required");
     if (!email.trim()) return setError("Email is required");
     if (!isValidEmail(email)) return setError("Enter a valid email address");
     if (phone.trim() && !isValidPhone(phone)) return setError("Phone number can only contain digits and a leading +");
@@ -71,7 +73,7 @@ export function UserModal({
       {error && <Toast kind="err" message={error} />}
       <div className="g2">
         <div className="fg">
-          <label>Name</label>
+          <label>Name *</label>
           <input value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="fg">

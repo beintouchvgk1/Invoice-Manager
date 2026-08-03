@@ -45,7 +45,14 @@ export async function PUT(req: NextRequest, { params }: Params) {
     return fail("Only a super admin can modify a super admin account", 403);
   }
 
-  if (typeof body.name === "string") user.name = body.name.trim();
+  // Bg_26: name is mandatory when it's being set, but this route is also used
+  // by the Deactivate/Activate toggle, which sends only { isActive } — so an
+  // unconditional required-check here would break that. Validate only when the
+  // caller actually supplies the field.
+  if (typeof body.name === "string") {
+    if (!body.name.trim()) return fail("Name is required", 400);
+    user.name = body.name.trim();
+  }
 
   if (isNonEmptyString(body.email)) {
     if (!isValidEmail(body.email)) return fail("A valid email is required", 400);

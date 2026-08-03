@@ -12,6 +12,7 @@ export function CustomerTable({
   onDelete,
   canEdit,
   canDelete,
+  canAddPayment,
 }: {
   clients: Client[];
   invoices: Invoice[];
@@ -22,6 +23,9 @@ export function CustomerTable({
   onDelete: (client: Client) => void;
   canEdit: boolean;
   canDelete: boolean;
+  // Bg_27: same as InvoiceTable — recording a payment is payments.create,
+  // and this button had no permission check at all before.
+  canAddPayment: boolean;
 }) {
   const paymentClientId = (p: Payment) => p.clientId || invoices.find((i) => i._id === p.invoiceId)?.clientId;
 
@@ -84,13 +88,15 @@ export function CustomerTable({
                   <td>
                     <div className="ac">
                       <button className="btn sm bg" onClick={() => onLedger(c)}>Ledger</button>
-                      <button
-                        className="btn sm"
-                        style={{ background: "#ecfdf5", color: "#059669", fontWeight: 700 }}
-                        onClick={() => onAddPayment(c)}
-                      >
-                        + Payment
-                      </button>
+                      {canAddPayment && (
+                        <button
+                          className="btn sm"
+                          style={{ background: "#ecfdf5", color: "#059669", fontWeight: 700 }}
+                          onClick={() => onAddPayment(c)}
+                        >
+                          + Payment
+                        </button>
+                      )}
                       {canEdit && <button className="btn sm bp" onClick={() => onEdit(c)}>Edit</button>}
                       {canDelete && (
                         <button

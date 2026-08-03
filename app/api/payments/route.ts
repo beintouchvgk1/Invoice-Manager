@@ -3,6 +3,7 @@ import { connectDB } from "@/lib/mongodb";
 import Payment from "@/models/Payment";
 import Settings from "@/models/Settings";
 import { recalcInvoice } from "@/lib/recalcInvoice";
+import { reallocateClientAdvances } from "@/lib/allocateAdvances";
 import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isNonEmptyString, isObjectId, isPositiveNumber, isValidDateStr } from "@/lib/validators";
@@ -59,6 +60,10 @@ export async function POST(req: NextRequest) {
     });
 
     if (payment.invoiceId) await recalcInvoice(payment.invoiceId);
+    // Bg_23: an advance (no invoiceId) must still settle the client's open
+    // invoices oldest-first; also re-runs after a linked payment in case it
+    // frees or consumes advance credit elsewhere on the account.
+    await reallocateClientAdvances(payment.clientId);
 
     return ok(payment, 201);
   } catch (err) {

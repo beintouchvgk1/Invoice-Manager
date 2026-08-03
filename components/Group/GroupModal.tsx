@@ -7,6 +7,7 @@ import { customerService } from "@/services/customer.service";
 import { groupService } from "@/services/group.service";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { useToast } from "@/hooks/useToast";
 import type { Client } from "@/lib/types";
 
 export function GroupModal({
@@ -26,6 +27,7 @@ export function GroupModal({
   // modal now shows real members/candidates instead of an empty list.
   const { customers: clients, refresh: refreshClients } = useCustomers();
   const online = useOnlineStatus();
+  const { showToast } = useToast();
   const [addSel, setAddSel] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -55,6 +57,9 @@ export function GroupModal({
     try {
       if (groupName) await groupService.rename(groupName, name.trim());
       else await groupService.create(name.trim());
+      // Bg_24: toasted from inside the modal (not the page's onSaved) because
+      // save and delete both call onSaved — only here is it known which ran.
+      showToast(groupName ? "Group updated." : "Group created.", "ok");
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save group");
@@ -68,6 +73,7 @@ export function GroupModal({
     setBusy(true);
     try {
       await groupService.remove(groupName);
+      showToast(`Group "${groupName}" deleted.`, "ok");
       onSaved();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete group");

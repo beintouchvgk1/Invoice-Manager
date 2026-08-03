@@ -47,6 +47,7 @@ export default function CustomersPage() {
     setDeleting(true);
     try {
       await offlineDelete("clients", customerService, deleteTarget._id);
+      showToast(`"${deleteTarget.name}" deleted.`, "ok");
       setDeleteTarget(null);
       refresh();
     } catch (err) {
@@ -91,6 +92,7 @@ export default function CustomersPage() {
               onDelete={setDeleteTarget}
               canEdit={can("customers.edit")}
               canDelete={can("customers.delete")}
+              canAddPayment={can("payments.create")}
             />
             <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} onLimitChange={setLimit} />
           </>
@@ -102,6 +104,9 @@ export default function CustomersPage() {
           client={editing}
           onClose={() => setEditing(undefined)}
           onSaved={() => {
+            // Bg_24: `editing` is null for a create and the record for an
+            // edit — read it before clearing so the wording is right.
+            showToast(editing ? "Client updated." : "Client added.", "ok");
             setEditing(undefined);
             refresh();
           }}
@@ -113,6 +118,7 @@ export default function CustomersPage() {
           presetClientId={payingFor._id}
           onClose={() => setPayingFor(null)}
           onSaved={() => {
+            showToast("Payment recorded.", "ok");
             setPayingFor(null);
             refreshInvoices();
             refreshPayments();

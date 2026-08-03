@@ -254,6 +254,45 @@ body {
   text-align: center;
   flex: none;
 }
+.offline-banner-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 7px;
+  vertical-align: -3px;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  font-style: italic;
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  flex: none;
+}
+.offline-banner-info:hover { background: var(--warning); color: var(--warning-bg); }
+
+/* Caution list inside the offline-safety dialog */
+.offline-tips { list-style: none; margin: 0 0 14px; padding: 0; }
+.offline-tips li {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  padding: 5px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+.offline-tips li:last-child { border-bottom: none; }
+.offline-tips .mark { font-weight: 700; flex: none; width: 14px; text-align: center; }
+.offline-tips .mark.no { color: var(--danger); }
+.offline-tips .mark.yes { color: var(--success); }
 
 .sync-indicator {
   padding: 5px 11px;

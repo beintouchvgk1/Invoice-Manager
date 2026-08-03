@@ -6,6 +6,7 @@ import { NetworkError } from "@/services/http";
 import type { CachedCurrentUser } from "@/lib/types";
 
 export function useCurrentUser() {
+  const [name, setName] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
@@ -15,6 +16,7 @@ export function useCurrentUser() {
     authService
       .verify()
       .then((res) => {
+        setName(res.name || null);
         setEmail(res.email);
         setRole(res.role);
         setPermissions(res.permissions);
@@ -29,6 +31,7 @@ export function useCurrentUser() {
         if (e instanceof NetworkError) {
           const cached = await readCache<CachedCurrentUser>("currentUser");
           if (cached) {
+            setName(cached.name || null);
             setEmail(cached.email);
             setRole(cached.role);
             setPermissions(cached.permissions);
@@ -42,5 +45,5 @@ export function useCurrentUser() {
     return permissions.includes("*") || permissions.includes(permission);
   }
 
-  return { email, role, permissions, can, loading };
+  return { name, email, role, permissions, can, loading };
 }

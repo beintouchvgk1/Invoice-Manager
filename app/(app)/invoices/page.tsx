@@ -12,6 +12,7 @@ import { useInvoices } from "@/hooks/useInvoices";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useListControls } from "@/hooks/useListControls";
+import { useToast } from "@/hooks/useToast";
 import { invoiceService } from "@/services/invoice.service";
 import { offlineDelete } from "@/lib/offline/mutate";
 import type { Invoice } from "@/lib/types";
@@ -22,6 +23,7 @@ export default function InvoicesPage() {
   const { customers } = useCustomers();
   const { can } = useCurrentUser();
   const printInvoice = usePrintInvoice();
+  const { showToast } = useToast();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [payFor, setPayFor] = useState<Invoice | null>(null);
@@ -44,6 +46,7 @@ export default function InvoicesPage() {
     setDeleting(true);
     try {
       await offlineDelete("invoices", invoiceService, deleteId);
+      showToast("Invoice deleted.", "ok");
       refresh();
     } finally {
       setDeleting(false);
@@ -93,6 +96,7 @@ export default function InvoicesPage() {
               onAddPayment={setPayFor}
               canEdit={can("invoices.edit")}
               canDelete={can("invoices.delete")}
+              canAddPayment={can("payments.create")}
             />
             <Pagination page={page} totalPages={totalPages} total={total} limit={limit} onPageChange={setPage} onLimitChange={setLimit} />
           </>
@@ -117,6 +121,7 @@ export default function InvoicesPage() {
           locked
           onClose={() => setPayFor(null)}
           onSaved={() => {
+            showToast("Payment recorded.", "ok");
             setPayFor(null);
             refresh();
           }}

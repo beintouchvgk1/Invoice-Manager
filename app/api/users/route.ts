@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   if (!(await requirePermission(req, "users.create"))) return fail("Unauthorized", 401);
   const body = await req.json().catch(() => null);
-  if (!body || !isValidEmail(body.email)) return fail("A valid email is required", 400);
+  if (!body || !isNonEmptyString(body.name)) return fail("Name is required", 400);
+  if (!isValidEmail(body.email)) return fail("A valid email is required", 400);
   if (!isNonEmptyString(body.password) || body.password.length < 6) {
     return fail("Password must be at least 6 characters", 400);
   }

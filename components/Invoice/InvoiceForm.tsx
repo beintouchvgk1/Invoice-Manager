@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Toast } from "@/components/Common/Toast";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useSettings } from "@/hooks/useSettings";
+import { useToast } from "@/hooks/useToast";
 import { invoiceService } from "@/services/invoice.service";
 import { offlineCreate, offlineUpdate } from "@/lib/offline/mutate";
 import { genInvoicePDF } from "@/lib/pdf";
@@ -18,6 +19,7 @@ export function InvoiceForm({ invoice }: { invoice?: Invoice }) {
   const router = useRouter();
   const { customers } = useCustomers();
   const { settings } = useSettings();
+  const { showToast } = useToast();
 
   const [invoiceNumber, setInvoiceNumber] = useState(invoice?.invoiceNumber || "");
   const [date, setDate] = useState(invoice?.date || td());
@@ -89,6 +91,10 @@ export function InvoiceForm({ invoice }: { invoice?: Invoice }) {
         genInvoicePDF(saved, client, settings);
       }
 
+      // Bg_24: fired before navigating away — ToastProvider lives in the root
+      // layout, so the message survives the route change and lands on the
+      // invoice list the user is sent to.
+      showToast(invoice ? "Invoice updated." : "Invoice created.", "ok");
       router.push("/invoices");
       router.refresh();
     } catch (err) {

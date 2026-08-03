@@ -6,6 +6,7 @@ import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail, conflict } from "@/lib/response";
 import { isObjectId, isValidDateStr, validateInvoiceItems } from "@/lib/validators";
 import { updatedAtMismatch } from "@/lib/conflictCheck";
+import { reallocateClientAdvances } from "@/lib/allocateAdvances";
 import type { RouteParams } from "@/lib/types";
 
 type Params = RouteParams;
@@ -66,7 +67,11 @@ export async function PUT(req: NextRequest, { params }: Params) {
   }
 
   await existing.save();
-  return ok(existing);
+  // Bg_23: the total may have moved, which changes how much advance credit
+  // this invoice absorbs and how much spills over to the client's others.
+  await reallocateClientAdvances(existing.clientId);
+  const settled = await Invoice.findById(existing._id);
+  return ok(settled ?? existing);
 }
 
 export async function DELETE(req: NextRequest, { params }: Params) {
@@ -85,7 +90,11 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   // Preserve payments already recorded against this invoice as client advances,
   // matching the original app's delete behavior.
   await Payment.updateMany({ invoiceId: invoice._id }, { $set: { clientId: invoice.clientId, invoiceId: null } });
+  const clientId = invoice.clientId;
   await invoice.deleteOne();
+  // Bg_23: those just-released payments are advance credit now, so the
+  // client's remaining invoices should soak them up oldest-first.
+  await reallocateClientAdvances(clientId);
 
   return ok({ deleted: true });
 }

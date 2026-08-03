@@ -153,13 +153,17 @@ export default function DashboardPage() {
                         <td><span className="bd bun">{d.maxAge} days</span></td>
                         <td style={{ textAlign: "right", fontWeight: 700, color: "#dc2626" }}>Rs. {fI(d.amount)}</td>
                         <td>
-                          <button
-                            className="btn sm"
-                            style={{ background: "#ecfdf5", color: "#059669", fontWeight: 700 }}
-                            onClick={() => setPayFor(clientId)}
-                          >
-                            Add Payment
-                          </button>{" "}
+                          {can("payments.create") && (
+                            <>
+                              <button
+                                className="btn sm"
+                                style={{ background: "#ecfdf5", color: "#059669", fontWeight: 700 }}
+                                onClick={() => setPayFor(clientId)}
+                              >
+                                Add Payment
+                              </button>{" "}
+                            </>
+                          )}
                           <button className="btn sm bg" onClick={() => router.push(`/ledger/${clientId}`)}>
                             Ledger
                           </button>

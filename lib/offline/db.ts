@@ -1,4 +1,5 @@
 import Dexie, { type Table } from "dexie";
+import { requestPersistentStorage } from "./persistStorage";
 import type { CacheRow, OfflineResource, QueuedOp } from "@/lib/types";
 
 const RESOURCES: OfflineResource[] = ["invoices", "clients", "groups", "payments", "roles", "users", "settings"];
@@ -56,6 +57,9 @@ export function getOfflineDB(): OfflineDB | null {
       instance = null;
     });
     instance = db;
+    // First actual use of offline storage is the natural moment to ask the
+    // browser not to evict it — queued-but-unsynced changes live here.
+    void requestPersistentStorage();
   }
   return instance;
 }

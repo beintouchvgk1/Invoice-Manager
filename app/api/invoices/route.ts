@@ -7,6 +7,7 @@ import { requirePermission } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { isNonEmptyString, isObjectId, isValidDateStr, validateInvoiceItems } from "@/lib/validators";
 import { formatInvoiceNo, formatReceiptNo } from "@/lib/invoiceNumber";
+import { reallocateClientAdvances } from "@/lib/allocateAdvances";
 
 export async function GET(req: NextRequest) {
   if (!(await requirePermission(req, "invoices.view"))) return fail("Unauthorized", 401);
@@ -100,7 +101,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return ok(invoice, 201);
+    // Bg_23: this is the exact case QA reported — a client with advance credit
+    // gets a new invoice, which should come out already Paid/Partial rather
+    // than Unpaid. Re-read so the response carries the settled status.
+    await reallocateClientAdvances(invoice.clientId);
+    const settled = await Invoice.findById(invoice._id);
+
+    return ok(settled ?? invoice, 201);
   } catch (err) {
     if (err && typeof err === "object" && "code" in err && err.code === 11000) {
       if (isNonEmptyString(body.clientOpId)) {

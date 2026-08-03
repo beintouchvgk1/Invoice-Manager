@@ -12,6 +12,7 @@ import { useInvoices } from "@/hooks/useInvoices";
 import { useCustomers } from "@/hooks/useCustomers";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useListControls } from "@/hooks/useListControls";
+import { useToast } from "@/hooks/useToast";
 import { paymentService } from "@/services/payment.service";
 import { settingsService } from "@/services/settings.service";
 import { offlineDelete } from "@/lib/offline/mutate";
@@ -25,6 +26,7 @@ function PaymentsPageInner() {
   const { invoices, refresh: refreshInvoices } = useInvoices();
   const { customers } = useCustomers();
   const { can } = useCurrentUser();
+  const { showToast } = useToast();
   const [modal, setModal] = useState<{ payment?: Payment; clientId?: string; invoiceId?: string } | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -57,6 +59,7 @@ function PaymentsPageInner() {
     setDeleting(true);
     try {
       await offlineDelete("payments", paymentService, deleteId);
+      showToast("Payment deleted.", "ok");
       refresh();
       refreshInvoices();
     } finally {
@@ -171,6 +174,7 @@ function PaymentsPageInner() {
           presetInvoiceId={modal.invoiceId}
           onClose={() => setModal(null)}
           onSaved={() => {
+            showToast(modal.payment ? "Payment updated." : "Payment recorded.", "ok");
             setModal(null);
             refresh();
             refreshInvoices();
