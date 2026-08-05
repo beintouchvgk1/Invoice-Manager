@@ -43,6 +43,24 @@ export const env = {
   appEnv,
   mongodbUri: resolveMongodbUri(appEnv),
   jwtSecret: required("JWT_SECRET"),
+
+  // --- Monthly Google Drive backup (see references/backup.md) -----------------
+  // All optional: the app boots and runs perfectly without them, the scheduled
+  // backup simply reports that it isn't configured yet. `required()` is
+  // deliberately NOT used here — a missing Drive credential must never take the
+  // whole app down.
+  //
+  // The backup always reads PRODUCTION data regardless of which deployment runs
+  // it, so a cron firing from a preview/staging deployment can't quietly archive
+  // the wrong database. BACKUP_MONGODB_URI overrides that for testing.
+  backupMongodbUri: process.env.BACKUP_MONGODB_URI || process.env.MONGODB_URI_PRODUCTION || "",
+  cronSecret: process.env.CRON_SECRET || "",
+  googleDrive: {
+    clientId: process.env.GOOGLE_DRIVE_CLIENT_ID || "",
+    clientSecret: process.env.GOOGLE_DRIVE_CLIENT_SECRET || "",
+    refreshToken: process.env.GOOGLE_DRIVE_REFRESH_TOKEN || "",
+    rootFolder: process.env.GOOGLE_DRIVE_BACKUP_FOLDER || "invoice-data-backup",
+  },
   seedSuperAdminEmail: process.env.SEED_SUPER_ADMIN_EMAIL || "beintouch.vgk@gmail.com",
   seedSuperAdminPassword: process.env.SEED_SUPER_ADMIN_PASSWORD || "admin123",
   seedSuperAdminPhone: process.env.SEED_SUPER_ADMIN_PHONE || "",

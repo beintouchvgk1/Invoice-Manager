@@ -20,6 +20,7 @@ assuming otherwise.
 @.claude/references/routes.md
 @.claude/references/types.md
 @.claude/references/offline.md
+@.claude/references/backup.md
 
 ## Skills (on-demand — invoke instead of inlining the recipe)
 - `ui-design` — apply the blue+white design system (with mandatory responsive behavior) to new/changed UI

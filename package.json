@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start -p 8000",
     "lint": "eslint",
-    "seed:super-admin": "tsx --env-file=.env scripts/seedSuperAdmin.ts"
+    "seed:super-admin": "tsx --env-file=.env scripts/seedSuperAdmin.ts",
+    "drive:token": "tsx --env-file=.env scripts/getGoogleRefreshToken.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
