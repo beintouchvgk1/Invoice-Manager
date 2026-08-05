@@ -49,21 +49,46 @@ const ICONS = {
   collapseLeft: "M11 19l-7-7 7-7M19 19l-7-7 7-7",
   collapseRight: "M13 5l7 7-7 7M5 5l7 7-7 7",
   close: "M18 6 6 18M6 6l12 12",
+  chevronDown: "M6 9l6 6 6-6",
 };
 
-const NAV = [
-  { id: "da", href: "/dashboard", icon: ICONS.dashboard, label: "Dashboard", perm: "dashboard.view" },
-  { id: "iv", href: "/invoices", icon: ICONS.invoices, label: "Invoices", perm: "invoices.view" },
-  { id: "cl", href: "/customers", icon: ICONS.clients, label: "Clients", perm: "customers.view" },
-  { id: "gr", href: "/groups", icon: ICONS.groups, label: "Groups", perm: "groups.view" },
-  { id: "py", href: "/payments", icon: ICONS.payments, label: "Payments", perm: "payments.view" },
-  { id: "rp", href: "/reports", icon: ICONS.reports, label: "Reports", perm: "reports.view" },
-  { id: "st", href: "/settings", icon: ICONS.settings, label: "Settings", perm: "settings.view" },
-  { id: "rl", href: "/roles", icon: ICONS.roles, label: "Roles & Permissions", perm: "roles.view" },
-  { id: "us", href: "/users", icon: ICONS.users, label: "Users", perm: "users.view" },
+// Same nav items, same hrefs/icons/permissions as before — only grouped under
+// section headings now. A heading is presentational: it isn't a link and has no
+// permission of its own; it's hidden whenever every item beneath it is (see the
+// render below), so a limited role never sees an empty "Administration" label.
+const NAV_GROUPS = [
+  {
+    id: "home",
+    label: "Home",
+    items: [{ id: "da", href: "/dashboard", icon: ICONS.dashboard, label: "Dashboard", perm: "dashboard.view" }],
+  },
+  {
+    id: "task",
+    label: "Task",
+    items: [
+      { id: "iv", href: "/invoices", icon: ICONS.invoices, label: "Invoices", perm: "invoices.view" },
+      { id: "cl", href: "/customers", icon: ICONS.clients, label: "Clients", perm: "customers.view" },
+      { id: "gr", href: "/groups", icon: ICONS.groups, label: "Groups", perm: "groups.view" },
+      { id: "py", href: "/payments", icon: ICONS.payments, label: "Payments", perm: "payments.view" },
+      { id: "rp", href: "/reports", icon: ICONS.reports, label: "Reports", perm: "reports.view" },
+    ],
+  },
+  {
+    id: "admin",
+    label: "Administration",
+    items: [
+      { id: "us", href: "/users", icon: ICONS.users, label: "Users", perm: "users.view" },
+      { id: "rl", href: "/roles", icon: ICONS.roles, label: "Roles & Permissions", perm: "roles.view" },
+      { id: "st", href: "/settings", icon: ICONS.settings, label: "Settings", perm: "settings.view" },
+    ],
+  },
 ];
 
 const COLLAPSE_KEY = "vgk_sidebar_collapsed";
+// Which nav groups are expanded, remembered across visits like the rail
+// preference above. Stored as the list of COLLAPSED group ids so a brand-new
+// user (and the server render) starts with everything open.
+const NAV_GROUPS_KEY = "vgk_sidebar_closed_groups";
 const MOBILE_QUERY = "(max-width: 1024px)";
 
 export function Sidebar() {
@@ -77,10 +102,24 @@ export function Sidebar() {
   const { pendingCount, conflictCount, failedCount } = useSyncStatus();
   const unsyncedCount = pendingCount + conflictCount + failedCount;
   const [showLogoutWarning, setShowLogoutWarning] = useState(false);
-  const nav = NAV.filter((item) => can(item.perm));
+  // Starts empty (= everything expanded) so the server render and the first
+  // client render agree; the saved preference is applied in an effect below,
+  // same approach as the rail-collapse state above.
+  const [closedGroups, setClosedGroups] = useState<string[]>([]);
+  // Filter items by permission exactly as before, then drop any group left with
+  // nothing in it so its heading doesn't hang there on its own.
+  const navGroups = NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((item) => can(item.perm)) })).filter(
+    (g) => g.items.length > 0
+  );
 
   useEffect(() => {
     setCollapsed(localStorage.getItem(COLLAPSE_KEY) === "1");
+    try {
+      const saved = JSON.parse(localStorage.getItem(NAV_GROUPS_KEY) || "[]");
+      if (Array.isArray(saved)) setClosedGroups(saved.filter((v): v is string => typeof v === "string"));
+    } catch {
+      /* corrupt/absent value — just leave every group expanded */
+    }
     const mq = window.matchMedia(MOBILE_QUERY);
     const update = () => setIsMobile(mq.matches);
     update();
@@ -92,10 +131,34 @@ export function Sidebar() {
     if (!isMobile) closeMobile();
   }, [isMobile, closeMobile]);
 
+  // Opens whichever group owns the page being viewed. Keyed on pathname only —
+  // deliberately NOT on closedGroups, so collapsing the group you're currently
+  // in stays collapsed instead of instantly springing back open. It reopens on
+  // the next navigation into that group (e.g. arriving by URL or redirect,
+  // which is the only way to reach a link inside a collapsed group).
+  useEffect(() => {
+    const owner = NAV_GROUPS.find((g) => g.items.some((i) => pathname.startsWith(i.href)));
+    if (!owner) return;
+    setClosedGroups((prev) => {
+      if (!prev.includes(owner.id)) return prev;
+      const next = prev.filter((id) => id !== owner.id);
+      localStorage.setItem(NAV_GROUPS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, [pathname]);
+
   function toggleCollapsed() {
     setCollapsed((prev) => {
       const next = !prev;
       localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+      return next;
+    });
+  }
+
+  function toggleGroup(groupId: string) {
+    setClosedGroups((prev) => {
+      const next = prev.includes(groupId) ? prev.filter((id) => id !== groupId) : [...prev, groupId];
+      localStorage.setItem(NAV_GROUPS_KEY, JSON.stringify(next));
       return next;
     });
   }
@@ -148,19 +211,47 @@ export function Sidebar() {
           )}
         </div>
         <nav>
-          {nav.map((item) => (
-            <Link
-              key={item.id}
-              id={`n-${item.id}`}
-              href={item.href}
-              className={pathname.startsWith(item.href) ? "active" : ""}
-              title={railCollapsed ? item.label : undefined}
-              onClick={closeMobile}
-            >
-              <Icon path={item.icon} />
-              {!railCollapsed && <span className="nav-label">{item.label}</span>}
-            </Link>
-          ))}
+          {navGroups.map((group) => {
+            // On the icon-only rail the headings are hidden, so there's no way
+            // to expand a group — always show every item there, otherwise its
+            // links would be unreachable until the sidebar is expanded again.
+            const isOpen = railCollapsed || !closedGroups.includes(group.id);
+            return (
+              <div className="nav-group" key={group.id}>
+                {!railCollapsed && (
+                  <button
+                    type="button"
+                    className="nav-group-label"
+                    aria-expanded={isOpen}
+                    aria-controls={`nav-group-${group.id}`}
+                    onClick={() => toggleGroup(group.id)}
+                  >
+                    <span>{group.label}</span>
+                    <span className={`nav-group-chevron${isOpen ? " open" : ""}`}>
+                      <Icon path={ICONS.chevronDown} />
+                    </span>
+                  </button>
+                )}
+                {isOpen && (
+                  <div id={`nav-group-${group.id}`} className="nav-group-items">
+                    {group.items.map((item) => (
+                      <Link
+                        key={item.id}
+                        id={`n-${item.id}`}
+                        href={item.href}
+                        className={pathname.startsWith(item.href) ? "active" : ""}
+                        title={railCollapsed ? item.label : undefined}
+                        onClick={closeMobile}
+                      >
+                        <Icon path={item.icon} />
+                        {!railCollapsed && <span className="nav-label">{item.label}</span>}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </nav>
         <div className="sidebar-footer">
           {!isMobile && (
